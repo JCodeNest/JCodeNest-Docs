@@ -41,8 +41,8 @@ export function BackToTop({ className, showOffset = 300 }: BackToTopProps) {
       variant="default"
       size="icon"
       className={cn(
-        "fixed right-8 bottom-8 z-50",
-        "h-12 w-12 rounded-full shadow-lg",
+        "fixed right-4 bottom-12 md:right-8 md:bottom-8 z-50",
+        "h-10 w-10 md:h-12 md:w-12 rounded-full shadow-lg",
         "bg-primary/90 hover:bg-primary hover:scale-110",
         "backdrop-blur-sm transition-all duration-300",
         "animate-in fade-in-0 slide-in-from-bottom-4",
@@ -52,7 +52,7 @@ export function BackToTop({ className, showOffset = 300 }: BackToTopProps) {
       title="返回顶部"
       aria-label="返回顶部"
     >
-      <ArrowUp className="h-5 w-5" />
+      <ArrowUp className="h-4 w-4 md:h-5 md:w-5" />
     </Button>
   )
 }

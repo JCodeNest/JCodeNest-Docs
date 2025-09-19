@@ -4,6 +4,7 @@ import * as React from "react"
 import { ChevronRight, List, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 
 interface TocItem {
   id: string
@@ -23,6 +24,7 @@ export function TableOfContents({ content, className }: TableOfContentsProps) {
   const [isVisible, setIsVisible] = React.useState(false)
   const [isExpanded, setIsExpanded] = React.useState(false)
   const [scrollProgress, setScrollProgress] = React.useState(0)
+  const [mobileOpen, setMobileOpen] = React.useState(false)
 
   // 解析Markdown内容生成目录
   React.useEffect(() => {
@@ -103,17 +105,17 @@ export function TableOfContents({ content, className }: TableOfContentsProps) {
                      })
 
     if (element) {
-      element.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      })
+      const offset = 80
+      const top = (element as HTMLElement).getBoundingClientRect().top + window.scrollY - offset
+      window.scrollTo({ top, behavior: 'smooth' })
     }
   }
 
   if (!tocItems.length) return null
 
   return (
-    <div className={cn("fixed right-8 top-24 z-50", className)}>
+    <>
+      <div className={cn("fixed right-8 top-24 z-50 hidden md:block", className)}>
       {/* 悬浮触发区域 - 扩大悬停区域 */}
       <div
         className="relative"
@@ -252,5 +254,45 @@ export function TableOfContents({ content, className }: TableOfContentsProps) {
         />
       </div>
     </div>
+
+    {/* 移动端抽屉目录 */}
+    <div className="md:hidden">
+      <Drawer open={mobileOpen} onOpenChange={setMobileOpen} direction="bottom">
+        <DrawerTrigger asChild>
+          <Button
+            variant="default"
+            size="icon"
+            className="fixed bottom-24 right-4 h-10 w-10 rounded-full shadow-lg bg-primary text-primary-foreground z-50"
+            title="文章目录"
+          >
+            <List className="h-4 w-4" />
+          </Button>
+        </DrawerTrigger>
+
+        <DrawerContent className="[&>div:first-child]:hidden">
+          <DrawerHeader>
+            <DrawerTitle>文章目录</DrawerTitle>
+          </DrawerHeader>
+
+          <div className="px-3 pb-4 max-h-[70vh] overflow-y-auto">
+            {tocItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => { setMobileOpen(false); setTimeout(() => scrollToHeading(item.id), 60) }}
+                className={cn(
+                  "w-full text-left py-3 px-2 rounded-md text-base",
+                  "hover:bg-muted/50",
+                  activeId === item.id && "bg-primary/10 text-primary"
+                )}
+                style={{ paddingLeft: `${(item.level - 1) * 16 + 8}px` }}
+              >
+                {item.title}
+              </button>
+            ))}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    </div>
+    </>
   )
 }
