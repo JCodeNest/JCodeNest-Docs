@@ -25,6 +25,13 @@ import type { Pluggable } from "unified"
 // KaTeX CSS import
 import "katex/dist/katex.min.css"
 
+// 去除 Markdown 文首 YAML Frontmatter（--- 开头和结尾的元信息块）
+function stripFrontmatter(text: string): string {
+  // 仅在文件开头匹配，以免误伤正文中的 --- 分隔线
+  const frontmatterPattern = /^---\n[\s\S]*?\n---\n?/
+  return text.replace(frontmatterPattern, "")
+}
+
 export interface MarkdownProps {
   children: string
   className?: string
@@ -270,7 +277,7 @@ const createDefaultComponents = (variant: MarkdownProps["variant"]): Partial<Com
     <blockquote
       className={cn(
         // 基础样式：与HTML块保持一致的设计
-        "my-6 border-l-4 border-blue-600 rounded-lg",
+        "my-6 rounded-lg",
         // 背景色：模拟 #f0f8ff 的浅蓝色背景
         "bg-blue-50 dark:bg-blue-950/30",
         // 内边距：使用 1rem 等效的 Tailwind 类
@@ -473,7 +480,8 @@ export function Markdown({
 }: MarkdownProps) {
   // 预处理文本，将 ==text== 语法转换为 <mark> 标签
   const preprocessedContent = React.useMemo(() => {
-    return children.replace(/==(.*?)==/g, '<mark>$1</mark>')
+    const stripped = stripFrontmatter(children)
+    return stripped.replace(/==(.*?)==/g, '<mark>$1</mark>')
   }, [children])
   // 构建插件数组
   const remarkPlugins = React.useMemo(() => {
