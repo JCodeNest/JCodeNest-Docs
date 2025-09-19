@@ -153,9 +153,9 @@ export function AppToolsGrid() {
               >
                 <CardContent className="p-3 flex flex-col items-center justify-center h-full text-center space-y-2">
                   <div className={`p-2 rounded-lg bg-muted/50 group-hover:bg-muted transition-colors ${tool.color}`}>
-                    <IconComponent className="w-5 h-5" />
+                    <IconComponent className="w-6 h-6 sm:w-5 sm:h-5" />
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 hidden sm:block">
                     <h4 className="text-xs font-medium text-foreground leading-tight">
                       {tool.name}
                     </h4>
@@ -164,12 +164,12 @@ export function AppToolsGrid() {
                     </p>
                   </div>
                   {!tool.available && (
-                    <div className="absolute top-1 right-1">
+                    <div className="absolute top-1.5 right-1.5">
                       <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
                     </div>
                   )}
                   {tool.available && (
-                    <div className="absolute top-1 right-1">
+                    <div className="absolute top-1.5 right-1.5">
                       <div className="w-2 h-2 bg-green-400 rounded-full" />
                     </div>
                   )}
