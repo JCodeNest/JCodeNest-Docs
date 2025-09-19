@@ -20,6 +20,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 
 // 导入内容上下文
 const ContentContext = React.createContext<{
@@ -77,12 +78,25 @@ export function NavMain({ items }: { items: NavNode[] }) {
           const Item = nested ? SidebarMenuSubItem : SidebarMenuItem
           return (
             <Item key={node.title}>
-              <Button asChild tooltip={nested ? undefined : node.title}>
-                <Link href={node.url} onClick={(e) => handleItemClick(node.url, e)}>
-                  {!nested && <IconComponent />}
-                  <span>{node.title}</span>
-                </Link>
-              </Button>
+              {nested ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button asChild>
+                      <Link href={node.url} onClick={(e) => handleItemClick(node.url, e)}>
+                        <span className="truncate">{node.title}</span>
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent sideOffset={6}>{node.title}</TooltipContent>
+                </Tooltip>
+              ) : (
+                <Button asChild tooltip={node.title}>
+                  <Link href={node.url} onClick={(e) => handleItemClick(node.url, e)}>
+                    {!nested && <IconComponent />}
+                    <span>{node.title}</span>
+                  </Link>
+                </Button>
+              )}
             </Item>
           )
         }
