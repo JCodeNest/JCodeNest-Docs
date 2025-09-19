@@ -1,16 +1,31 @@
 import { NextResponse } from 'next/server'
 import { getContentTree } from '@/lib/content'
 
+type ContentItem = {
+  title: string
+  type: "folder" | "file"
+  path: string
+  children?: ContentItem[]
+}
+
+type NavNode = {
+  title: string
+  url: string
+  icon: "FolderOpen" | "FileText" | "BookOpen"
+  isActive?: boolean
+  items?: NavNode[]
+}
+
 // 递归将 ContentItem 转为侧边栏 nav 结构（支持任意层级）
-function mapToNav(item: { title: string; type: 'folder' | 'file'; path: string; children?: any[] }) {
-  const node: any = {
+function mapToNav(item: ContentItem): NavNode {
+  const node: NavNode = {
     title: item.title,
-    url: item.type === 'file' ? `/docs?path=${encodeURIComponent(item.path)}` : '#',
-    icon: item.type === 'folder' ? 'FolderOpen' : 'FileText',
+    url: item.type === "file" ? `/docs?path=${encodeURIComponent(item.path)}` : "#",
+    icon: item.type === "folder" ? "FolderOpen" as const : "FileText",
     isActive: false,
   }
   if (item.children && item.children.length) {
-    node.items = item.children.map(child => mapToNav(child))
+    node.items = item.children.map((child) => mapToNav(child))
   }
   return node
 }

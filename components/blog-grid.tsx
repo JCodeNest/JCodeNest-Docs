@@ -99,11 +99,12 @@ export function BlogGrid() {
       if (!pathMatch) return null
       const decodedPath = decodeURIComponent(pathMatch[1])
 
-      let metadata: any = {}
+      type Metadata = { title?: string; summary?: string; cover?: string; date?: string }
+      let metadata: Metadata = {}
       try {
         const metadataResponse = await fetch(`/api/metadata?path=${encodeURIComponent(decodedPath)}`)
         if (metadataResponse.ok) {
-          metadata = await metadataResponse.json()
+          metadata = (await metadataResponse.json()) as Metadata
         }
       } catch {
         // 忽略元数据错误，使用默认值
