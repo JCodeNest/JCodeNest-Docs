@@ -91,12 +91,12 @@ const appTools: AppTool[] = [
     available: true
   },
   {
-    id: "performance",
-    name: "性能测试",
-    description: "网站性能分析工具",
-    icon: Zap,
+    id: "site-nav",
+    name: "站点导航",
+    description: "常用站点导航与搜索入口",
+    icon: Globe,
     color: "text-yellow-500",
-    available: false
+    available: true
   }
 ]
 
@@ -132,6 +132,9 @@ export function AppToolsGrid() {
           break
         case "api-tester":
           router.push("/tools/api-tester")
+          break
+        case "site-nav":
+          router.push("/tools/site-nav")
           break
         default:
           console.log(`Navigate to ${tool.id}`)
