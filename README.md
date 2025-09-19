@@ -88,6 +88,138 @@ bun start
 2. 在 Vercel 中导入您的仓库
 3. Vercel 会自动检测这是一个 Next.js 项目并进行部署
 
+## 自托管部署（Node + Nginx + PM2 推荐）
+
+本项目当前包含 API 路由与动态能力（见 /api/*），建议以 Next.js 原生运行的方式在自有服务器部署，既保留功能又最省改造成本。
+
+### 环境准备
+- Node.js 18+（建议 LTS）
+- NPM 或 PNPM
+- Nginx（反向代理与静态缓存）
+- 可选：PM2（守护进程）、Certbot（HTTPS）
+
+### 构建（本地或服务器均可）
+```bash
+# 推荐在服务器上构建；或在本地构建后仅上传构建产物（见下文 standalone）
+npm ci
+npm run build
+```
+
+### 启动（二选一）
+- 直接启动
+```bash
+NODE_ENV=production PORT=3000 npm start
+```
+
+- 使用 PM2 守护（推荐）
+```bash
+npm i -g pm2
+NODE_ENV=production PORT=3000 pm2 start "npm start" --name jcodnest-docs
+pm2 save
+pm2 startup   # 按提示执行以设置开机自启
+```
+
+### 标准 Nginx 反向代理（可直接粘贴）
+将以下配置放入你的站点 server 块（根据域名与路径调整）。若已使用 upstream，可抽出到 http 级别统一管理。
+
+```nginx
+# /etc/nginx/conf.d/jcodnest.conf 示例
+upstream jcodnest_upstream {
+    server 127.0.0.1:3000;  # Next.js 应用监听端口
+    keepalive 64;
+}
+
+server {
+    listen 80;
+    server_name your.domain.com;
+
+    # 如使用 HTTPS，建议将 80 重定向至 443（此处略）
+    # return 301 https://$host$request_uri;
+
+    # 基础代理到 Next.js
+    location / {
+        proxy_pass http://jcodnest_upstream;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # WebSocket/热更新等升级头（通用写法，保持兼容）
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    # Next.js 静态构建产物，强缓存且 immutable
+    location /_next/static/ {
+        proxy_pass http://jcodnest_upstream;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # 公共静态资源（/public）适度缓存
+    location /static/ {
+        proxy_pass http://jcodnest_upstream;
+        expires 30d;
+        add_header Cache-Control "public, max-age=2592000";
+    }
+
+    # 一般也可直接由 Next.js 处理 /public 下的资源，无需额外 location
+    # 如需 HTTPS：结合 Certbot 申请并自动续期证书
+}
+```
+
+提示
+- 若你的静态资源路径不是 /static/，可删除该段或对应调整。Next 的 /public 会映射为站点根路径（例如 /favicon.ico）。
+- 建议开启 gzip/brotli（全局或 server 级）以降低带宽。
+
+### 可选优化：standalone 精简部署
+通过 standalone 将运行时依赖打包至 .next/standalone，部署更轻量，适合本地构建后仅上传最小集产物。
+
+1) next.config.js 增加：
+```js
+// next.config.js
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: "standalone",
+  // 可选：生成 sourcemap、开启严格模式等
+  reactStrictMode: true,
+}
+
+module.exports = nextConfig
+```
+
+2) 构建：
+```bash
+npm ci
+npm run build
+```
+
+3) 部署以下目录/文件到服务器（例如 /srv/jcodnest）：
+- .next/standalone/      # 包含 server.js 与必要 node_modules
+- .next/static/          # 静态资源
+- public/                # 公开资源
+- .env.production（可选）
+
+4) 启动：
+```bash
+cd /srv/jcodnest/.next/standalone
+NODE_ENV=production PORT=3000 node server.js
+# 或 PM2：
+pm2 start server.js --name jcodnest --node-args="--env-file=/srv/jcodnest/.env.production"
+pm2 save
+pm2 startup
+```
+
+5) Nginx 反向代理同上。
+
+常见问题
+- 端口冲突：如 3000 已被占用，修改 PORT 环境变量，并同步更新 Nginx upstream。
+- Turbopack 与生产：build 使用 Next 官方构建即可（日志显示 Turbopack 编译通过）；生产建议使用 npm start（next start）。
+- 环境变量：将生产所需变量写入 .env.production，注意不要提交到仓库。
+
+> 如果未来要改成纯静态托管（如 COS、GitHub Pages），需移除 API 与动态能力，开启 `output: "export"` 并在构建后 `npx next export`，部署 out 目录。该模式不保留 /api/* 与动态渲染能力。
+
 ### 其他部署平台
 
 本项目也可以部署到其他支持 Node.js 的平台：
