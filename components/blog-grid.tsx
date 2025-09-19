@@ -78,52 +78,52 @@ export function BlogGrid() {
   };
 
   // 从目录树中提取博客文章并获取元数据
-  const extractBlogPosts = async (navItems: Array<{title: string, items?: Array<{title: string, url: string}>}>): Promise<BlogPost[]> => {
-    const posts: BlogPost[] = [];
-    
-    for (const category of navItems) {
-      if (category.items && category.items.length > 0) {
-        for (const item of category.items) {
-          const pathMatch = item.url.match(/path=([^&]+)/);
-          if (pathMatch) {
-            const decodedPath = decodeURIComponent(pathMatch[1]);
-            
-            // 获取文档元数据
-            try {
-              const metadataResponse = await fetch(`/api/metadata?path=${encodeURIComponent(decodedPath)}`);
-              let metadata = {};
-              if (metadataResponse.ok) {
-                metadata = await metadataResponse.json();
-              }
-              
-              posts.push({
-                title: (metadata as {title?: string, summary?: string, cover?: string, date?: string}).title || item.title,
-                summary: (metadata as {title?: string, summary?: string, cover?: string, date?: string}).summary || generateSummary(item.title),
-                cover: (metadata as {title?: string, summary?: string, cover?: string, date?: string}).cover,
-                path: decodedPath,
-                url: item.url,
-                category: category.title,
-                readTime: generateReadTime(),
-                publishDate: (metadata as {title?: string, summary?: string, cover?: string, date?: string}).date || generateDate()
-              });
-            } catch (error) {
-              // 如果元数据获取失败，使用默认值
-              posts.push({
-                title: item.title,
-                summary: generateSummary(item.title),
-                path: decodedPath,
-                url: item.url,
-                category: category.title,
-                readTime: generateReadTime(),
-                publishDate: generateDate()
-              });
-            }
-          }
+  // 从目录树中提取博客文章并获取元数据（递归，支持任意层级）
+  type NavNode = { title: string; url?: string; items?: NavNode[]; icon?: string; isActive?: boolean }
+  const extractBlogPosts = async (navItems: NavNode[]): Promise<BlogPost[]> => {
+    // 深度优先收集所有文件节点以及其祖先（用于确定顶级分类）
+    const files: Array<{ node: NavNode; ancestors: string[] }> = []
+    const dfs = (nodes: NavNode[], ancestors: string[]) => {
+      for (const n of nodes) {
+        if (n.items && n.items.length) {
+          dfs(n.items, [...ancestors, n.title])
+        } else if (n.url && n.url.includes('path=')) {
+          files.push({ node: n, ancestors })
         }
       }
     }
-    
-    return posts;
+    dfs(navItems, [])
+
+    const results = await Promise.all(files.map(async ({ node, ancestors }) => {
+      const pathMatch = node.url!.match(/path=([^&]+)/)
+      if (!pathMatch) return null
+      const decodedPath = decodeURIComponent(pathMatch[1])
+
+      let metadata: any = {}
+      try {
+        const metadataResponse = await fetch(`/api/metadata?path=${encodeURIComponent(decodedPath)}`)
+        if (metadataResponse.ok) {
+          metadata = await metadataResponse.json()
+        }
+      } catch {
+        // 忽略元数据错误，使用默认值
+      }
+
+      const category = ancestors[0] || '未分类'
+      const post: BlogPost = {
+        title: metadata.title || node.title,
+        summary: metadata.summary || generateSummary(node.title),
+        cover: metadata.cover,
+        path: decodedPath,
+        url: node.url!,
+        category,
+        readTime: generateReadTime(),
+        publishDate: metadata.date || generateDate(),
+      }
+      return post
+    }))
+
+    return results.filter(Boolean) as BlogPost[]
   };
 
   // 生成摘要（仅在没有元数据时使用）

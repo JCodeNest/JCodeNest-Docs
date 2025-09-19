@@ -65,8 +65,16 @@ const staticData = {
   ],
 }
 
+type NavNode = {
+  title: string
+  url: string
+  icon: string
+  isActive?: boolean
+  items?: NavNode[]
+}
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [navData, setNavData] = React.useState<Array<{title: string, url: string, icon: string, isActive?: boolean, items?: {title: string, url: string}[]}>>([])
+  const [navData, setNavData] = React.useState<NavNode[]>([])
   const [loading, setLoading] = React.useState(true)
   
   React.useEffect(() => {
@@ -135,21 +143,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 }
 
 // 默认导航数据的获取函数
-function getDefaultNavData() {
+function getDefaultNavData(): NavNode[] {
   return [
     {
       title: "博客文档",
       url: "#",
-      icon: 'BookOpen', // 使用字符串
+      icon: 'BookOpen',
       isActive: true,
       items: [
         {
           title: "欢迎页面",
           url: "#",
+          icon: 'FileText',
         },
         {
           title: "快速开始",
           url: "#",
+          icon: 'FileText',
         },
       ],
     },
