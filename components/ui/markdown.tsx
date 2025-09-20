@@ -118,13 +118,14 @@ const CodeBlock = ({
 // 默认组件映射
 const createDefaultComponents = (variant: MarkdownProps["variant"]): Partial<Components> => ({
   // 标题组件
-  h1: ({ children, ...props }) => {
-    const id = typeof children === 'string' 
-      ? children.toLowerCase().replace(/[^\w\u4e00-\u9fa5\s-]/g, '').replace(/\s+/g, '-').replace(/^-+|-+$/g, '')
-      : ''
+  h1: ({ children, id, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => {
+    const slugify = (t: string) => t.toLowerCase().replace(/[^\w\u4e00-\u9fa5\s-]/g, '').replace(/\s+/g, '-').replace(/^-+|-+$/g, '')
+    const text = typeof children === 'string' ? children : ''
+    const computedId = text ? slugify(text) : ''
+    const finalId = computedId || id
     return (
       <h1
-        id={id}
+        id={finalId}
         className={cn(
           "scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl",
           variant === "compact" && "text-3xl lg:text-4xl",
@@ -136,13 +137,14 @@ const createDefaultComponents = (variant: MarkdownProps["variant"]): Partial<Com
       </h1>
     )
   },
-  h2: ({ children, ...props }) => {
-    const id = typeof children === 'string' 
-      ? children.toLowerCase().replace(/[^\w\u4e00-\u9fa5\s-]/g, '').replace(/\s+/g, '-').replace(/^-+|-+$/g, '')
-      : ''
+  h2: ({ children, id, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => {
+    const slugify = (t: string) => t.toLowerCase().replace(/[^\w\u4e00-\u9fa5\s-]/g, '').replace(/\s+/g, '-').replace(/^-+|-+$/g, '')
+    const text = typeof children === 'string' ? children : ''
+    const computedId = text ? slugify(text) : ''
+    const finalId = computedId || id
     return (
       <h2
-        id={id}
+        id={finalId}
         className={cn(
           "scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0",
           variant === "compact" && "text-2xl pb-1",
@@ -154,13 +156,14 @@ const createDefaultComponents = (variant: MarkdownProps["variant"]): Partial<Com
       </h2>
     )
   },
-  h3: ({ children, ...props }) => {
-    const id = typeof children === 'string' 
-      ? children.toLowerCase().replace(/[^\w\u4e00-\u9fa5\s-]/g, '').replace(/\s+/g, '-').replace(/^-+|-+$/g, '')
-      : ''
+  h3: ({ children, id, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => {
+    const slugify = (t: string) => t.toLowerCase().replace(/[^\w\u4e00-\u9fa5\s-]/g, '').replace(/\s+/g, '-').replace(/^-+|-+$/g, '')
+    const text = typeof children === 'string' ? children : ''
+    const computedId = text ? slugify(text) : ''
+    const finalId = computedId || id
     return (
       <h3
-        id={id}
+        id={finalId}
         className={cn(
           "scroll-m-20 text-2xl font-semibold tracking-tight",
           variant === "compact" && "text-xl",
@@ -172,13 +175,14 @@ const createDefaultComponents = (variant: MarkdownProps["variant"]): Partial<Com
       </h3>
     )
   },
-  h4: ({ children, ...props }) => {
-    const id = typeof children === 'string' 
-      ? children.toLowerCase().replace(/[^\w\u4e00-\u9fa5\s-]/g, '').replace(/\s+/g, '-').replace(/^-+|-+$/g, '')
-      : ''
+  h4: ({ children, id, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => {
+    const slugify = (t: string) => t.toLowerCase().replace(/[^\w\u4e00-\u9fa5\s-]/g, '').replace(/\s+/g, '-').replace(/^-+|-+$/g, '')
+    const text = typeof children === 'string' ? children : ''
+    const computedId = text ? slugify(text) : ''
+    const finalId = computedId || id
     return (
       <h4
-        id={id}
+        id={finalId}
         className={cn(
           "scroll-m-20 text-xl font-semibold tracking-tight",
           variant === "compact" && "text-lg",
@@ -190,13 +194,14 @@ const createDefaultComponents = (variant: MarkdownProps["variant"]): Partial<Com
       </h4>
     )
   },
-  h5: ({ children, ...props }) => {
-    const id = typeof children === 'string' 
-      ? children.toLowerCase().replace(/[^\w\u4e00-\u9fa5\s-]/g, '').replace(/\s+/g, '-').replace(/^-+|-+$/g, '')
-      : ''
+  h5: ({ children, id, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => {
+    const slugify = (t: string) => t.toLowerCase().replace(/[^\w\u4e00-\u9fa5\s-]/g, '').replace(/\s+/g, '-').replace(/^-+|-+$/g, '')
+    const text = typeof children === 'string' ? children : ''
+    const computedId = text ? slugify(text) : ''
+    const finalId = computedId || id
     return (
       <h5
-        id={id}
+        id={finalId}
         className={cn(
           "scroll-m-20 text-lg font-semibold tracking-tight",
           variant === "compact" && "text-base",
@@ -208,13 +213,14 @@ const createDefaultComponents = (variant: MarkdownProps["variant"]): Partial<Com
       </h5>
     )
   },
-  h6: ({ children, ...props }) => {
-    const id = typeof children === 'string' 
-      ? children.toLowerCase().replace(/[^\w\u4e00-\u9fa5\s-]/g, '').replace(/\s+/g, '-').replace(/^-+|-+$/g, '')
-      : ''
+  h6: ({ children, id, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => {
+    const slugify = (t: string) => t.toLowerCase().replace(/[^\w\u4e00-\u9fa5\s-]/g, '').replace(/\s+/g, '-').replace(/^-+|-+$/g, '')
+    const text = typeof children === 'string' ? children : ''
+    const computedId = text ? slugify(text) : ''
+    const finalId = computedId || id
     return (
       <h6
-        id={id}
+        id={finalId}
         className={cn(
           "scroll-m-20 text-base font-semibold tracking-tight",
           variant === "compact" && "text-sm",

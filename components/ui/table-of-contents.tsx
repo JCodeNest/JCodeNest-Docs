@@ -26,36 +26,41 @@ export function TableOfContents({ content, className }: TableOfContentsProps) {
   const [scrollProgress, setScrollProgress] = React.useState(0)
   const [mobileOpen, setMobileOpen] = React.useState(false)
 
-  // 解析Markdown内容生成目录
+  const slugify = React.useCallback((t: string) =>
+    t
+      .toLowerCase()
+      .replace(/[^\w\u4e00-\u9fa5\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/^-+|-+$/g, ""),
+  [])
+
+  // 使用已渲染的 DOM 来生成目录，确保与 rehypeSlug 生成的 id 完全一致
   React.useEffect(() => {
-    const parseHeadings = () => {
-      const headingRegex = /^(#{1,6})\s+(.+)$/gm
-      const headings: TocItem[] = []
-      let match
-
-      while ((match = headingRegex.exec(content)) !== null) {
-        const level = match[1].length
-        const title = match[2].trim()
-        const id = title
-          .toLowerCase()
-          .replace(/[^\w\u4e00-\u9fa5\s-]/g, '')
-          .replace(/\s+/g, '-')
-          .replace(/^-+|-+$/g, '')
-
-        headings.push({
-          id,
-          title,
-          level,
-        })
-      }
-
-      setTocItems(headings)
+    const buildTocFromDom = () => {
+      const container = document.querySelector('.prose') || document
+      const headings = container.querySelectorAll('h1, h2, h3, h4, h5, h6')
+      const items: TocItem[] = []
+      headings.forEach((h) => {
+        const el = h as HTMLElement
+        const id = el.id || slugify(el.textContent || "")
+        const level = Number(el.tagName.replace('H', ''))
+        const title = (el.textContent || '').trim()
+        items.push({ id, title, level })
+      })
+      setTocItems(items)
     }
 
-    if (content) {
-      parseHeadings()
+    // 初始与后续变更
+    const timer = window.setTimeout(buildTocFromDom, 0)
+    const container = document.querySelector('.prose')
+    const observer = new MutationObserver(() => buildTocFromDom())
+    if (container) observer.observe(container, { childList: true, subtree: true })
+
+    return () => {
+      window.clearTimeout(timer)
+      observer.disconnect()
     }
-  }, [content])
+  }, [content, slugify])
 
   // 监听滚动，高亮当前章节
   React.useEffect(() => {
@@ -76,10 +81,7 @@ export function TableOfContents({ content, className }: TableOfContentsProps) {
         const offsetTop = element.offsetTop
         
         if (offsetTop <= scrollTop + windowHeight / 3) {
-          current = element.id || element.textContent?.toLowerCase()
-            .replace(/[^\w\u4e00-\u9fa5\s-]/g, '')
-            .replace(/\s+/g, '-')
-            .replace(/^-+|-+$/g, '') || ""
+          current = element.id || slugify(element.textContent || "")
         }
       })
 
@@ -90,19 +92,13 @@ export function TableOfContents({ content, className }: TableOfContentsProps) {
     handleScroll() // 初始检查
 
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [slugify])
 
   // 平滑滚动到指定标题
   const scrollToHeading = (id: string) => {
     const element = document.getElementById(id) || 
                    Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6'))
-                     .find(h => {
-                       const generatedId = h.textContent?.toLowerCase()
-                         .replace(/[^\w\u4e00-\u9fa5\s-]/g, '')
-                         .replace(/\s+/g, '-')
-                         .replace(/^-+|-+$/g, '')
-                       return generatedId === id
-                     })
+                     .find(h => slugify(h.textContent || '') === id)
 
     if (element) {
       const offset = 80
