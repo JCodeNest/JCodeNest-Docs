@@ -1,10 +1,10 @@
 "use client"
 
-import React from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Github, Star, GitFork, ExternalLink, Sparkles } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { ExternalLink, GitFork, Github, Star } from "lucide-react"
+import React from "react"
 
 const STORAGE_KEY = "jcn_promo_last_shown"
 const ONE_DAY = 24 * 60 * 60 * 1000
@@ -79,9 +79,16 @@ export function GlobalPromoDialog() {
 
           {/* 亮点列表 */}
           <ul className="mt-5 space-y-2 text-sm text-muted-foreground">
-            <li className="flex items-start"><span className="mt-1 mr-2 size-1.5 rounded-full bg-primary" /> 递归内容树 · Frontmatter 处理 · 自定义目录抽屉</li>
-            <li className="flex items-start"><span className="mt-1 mr-2 size-1.5 rounded-full bg-primary" /> 博客网格 · 搜索接口 · 工具集合（哈希/二维码/图片转换等）</li>
-            <li className="flex items-start"><span className="mt-1 mr-2 size-1.5 rounded-full bg-primary" /> 移动端优化：目录/返回顶部/卡片布局</li>
+            {/* 内容优先 */}
+            <li className="flex items-start"><span className="mt-1 mr-2 size-1.5 rounded-full bg-primary" /> 你的博客只需关注内容：文件即页面，改动即生效</li>
+            {/* 文档树实时处理 */}
+            <li className="flex items-start"><span className="mt-1 mr-2 size-1.5 rounded-full bg-primary" /> 实时处理文档树：自动递归目录与 Frontmatter，目录/路由联动</li>
+            {/* Markdown 渲染 */}
+            <li className="flex items-start"><span className="mt-1 mr-2 size-1.5 rounded-full bg-primary" /> 极佳的 Markdown 渲染：行内代码、代码块、表格、提示、KaTeX、Mermaid</li>
+            {/* 搜索能力 */}
+            <li className="flex items-start"><span className="mt-1 mr-2 size-1.5 rounded-full bg-primary" /> 内置搜索能力：无需第三方插件，开箱即用</li>
+            {/* 工具集 + 移动端 */}
+            <li className="flex items-start"><span className="mt-1 mr-2 size-1.5 rounded-full bg-primary" /> 工具集与移动端适配：哈希/二维码/图片转换；目录抽屉/返回顶部/卡片布局</li>
           </ul>
 
           {/* 次要链接 */}
