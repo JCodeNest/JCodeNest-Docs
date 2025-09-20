@@ -1,39 +1,38 @@
 "use client"
 
 import {
-  ChevronsUpDown,
-  Monitor,
-  Moon,
-  Sun,
-  Settings,
-  Bell,
-  Palette,
+    Bell,
+    ChevronsUpDown,
+    Monitor,
+    Moon,
+    Palette,
+    Sun
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import * as React from "react"
 
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
+    Avatar,
+    AvatarFallback,
+    AvatarImage,
 } from "@/components/ui/avatar"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    useSidebar,
 } from "@/components/ui/sidebar"
 
 export function NavUser({
@@ -100,7 +99,8 @@ export function NavUser({
             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
             side={isMobile ? "bottom" : "right"}
             align="end"
-            sideOffset={4}
+            sideOffset={8}
+            collisionPadding={12}
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
@@ -116,14 +116,11 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="gap-2">
-                  <Palette className="h-4 w-4" />
-                  <span>主题外观</span>
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent className="w-48">
-                  <DropdownMenuItem 
-                    onClick={() => setTheme('system')} 
+              {isMobile ? (
+                <>
+                  <DropdownMenuLabel className="text-xs text-muted-foreground">主题外观</DropdownMenuLabel>
+                  <DropdownMenuItem
+                    onClick={() => setTheme('system')}
                     className="gap-2 py-2.5"
                   >
                     <Monitor className="h-4 w-4" />
@@ -134,8 +131,8 @@ export function NavUser({
                       </div>
                     )}
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => setTheme('light')} 
+                  <DropdownMenuItem
+                    onClick={() => setTheme('light')}
                     className="gap-2 py-2.5"
                   >
                     <Sun className="h-4 w-4" />
@@ -146,8 +143,8 @@ export function NavUser({
                       </div>
                     )}
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => setTheme('dark')} 
+                  <DropdownMenuItem
+                    onClick={() => setTheme('dark')}
                     className="gap-2 py-2.5"
                   >
                     <Moon className="h-4 w-4" />
@@ -158,8 +155,57 @@ export function NavUser({
                       </div>
                     )}
                   </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
+                </>
+              ) : (
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="gap-2">
+                    <Palette className="h-4 w-4" />
+                    <span>主题外观</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent
+                    className="w-48 max-h-[50vh] overflow-auto"
+                    sideOffset={8}
+                    collisionPadding={12}
+                  >
+                    <DropdownMenuItem
+                      onClick={() => setTheme('system')}
+                      className="gap-2 py-2.5"
+                    >
+                      <Monitor className="h-4 w-4" />
+                      <span>跟随系统</span>
+                      {mounted && theme === 'system' && (
+                        <div className="ml-auto">
+                          <div className="h-2 w-2 rounded-full bg-primary" />
+                        </div>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setTheme('light')}
+                      className="gap-2 py-2.5"
+                    >
+                      <Sun className="h-4 w-4" />
+                      <span>亮色模式</span>
+                      {mounted && theme === 'light' && (
+                        <div className="ml-auto">
+                          <div className="h-2 w-2 rounded-full bg-primary" />
+                        </div>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setTheme('dark')}
+                      className="gap-2 py-2.5"
+                    >
+                      <Moon className="h-4 w-4" />
+                      <span>暗色模式</span>
+                      {mounted && theme === 'dark' && (
+                        <div className="ml-auto">
+                          <div className="h-2 w-2 rounded-full bg-primary" />
+                        </div>
+                      )}
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              )}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="gap-2">
