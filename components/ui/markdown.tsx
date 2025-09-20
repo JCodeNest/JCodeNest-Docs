@@ -1,25 +1,25 @@
 "use client"
 
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { MarkdownImage } from "@/components/ui/image-preview"
+import { MermaidCodeBlock } from "@/components/ui/mermaid"
+import { Separator } from "@/components/ui/separator"
+import { cn } from "@/lib/utils"
+import { Check, Copy, ExternalLink } from "lucide-react"
+import { useTheme } from "next-themes"
 import * as React from "react"
+import type { Components } from "react-markdown"
 import ReactMarkdown from "react-markdown"
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
 import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism"
-import remarkGfm from "remark-gfm"
-import remarkMath from "remark-math"
-import remarkToc from "remark-toc"
 import rehypeKatex from "rehype-katex"
 import rehypeRaw from "rehype-raw"
 import rehypeSlug from "rehype-slug"
-import { useTheme } from "next-themes"
-import { cn } from "@/lib/utils"
-import { Card } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { MarkdownImage } from "@/components/ui/image-preview"
-import { MermaidCodeBlock } from "@/components/ui/mermaid"
-import { Check, Copy, ExternalLink } from "lucide-react"
-import type { Components } from "react-markdown"
+import remarkGfm from "remark-gfm"
+import remarkMath from "remark-math"
+import remarkToc from "remark-toc"
 import type { Pluggable } from "unified"
 
 // KaTeX CSS import
@@ -310,50 +310,52 @@ const createDefaultComponents = (variant: MarkdownProps["variant"]): Partial<Com
   ),
 
   // 代码 - 分离行内和块级处理
-  code: ({ children, className, inline, ...props }: {children?: React.ReactNode, className?: string, inline?: boolean}) => {
-    if (inline) {
+  code: ({ children, className, inline }: {children?: React.ReactNode, className?: string, inline?: boolean}) => {
+    // 某些情况下 inline 可能为 undefined，这里用 className 是否包含 language- 来辅助判断
+    const isInline = inline === true || !className || !/\blanguage-/.test(className)
+
+    if (isInline) {
       return (
         <code
           className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold"
-          {...props}
         >
           {children}
         </code>
       )
     }
-    // 非行内代码块需要特殊处理，避免在 p 标签内渲染 div
-    return null // 交给 pre 标签处理
+    // 非行内代码块：渲染一个 code 元素，供 pre 包裹并提取信息
+    return (
+      <code className={className}>
+        {children}
+      </code>
+    )
   },
   // 专门处理代码块 - 确保不在 p 标签内
   pre: ({ children, ...props }: {children?: React.ReactNode}) => {
     // 检查 children 是否是 code 元素
-    const codeElement = React.Children.toArray(children)[0] as React.ReactElement<{ className?: string; children?: React.ReactNode }>
-    if (codeElement && codeElement.props) {
-      const className = codeElement.props.className || ''
-      const codeString = String(codeElement.props.children || '').replace(/\n$/, "")
-      
-      // 检查是否是 Mermaid 图表
-      if (className.includes('language-mermaid')) {
-        return (
-          <div className="my-6" {...props}>
-            <MermaidCodeBlock>{codeString}</MermaidCodeBlock>
-          </div>
-        )
-      }
-      
+    const childArray = React.Children.toArray(children)
+    const codeElement = childArray[0] as React.ReactElement<{ className?: string; children?: React.ReactNode }>
+
+    const className = (codeElement && codeElement.props) ? (codeElement.props.className || '') : ''
+    const rawCodeChildren = (codeElement && codeElement.props && typeof codeElement.props.children !== 'undefined')
+      ? codeElement.props.children
+      : children
+    const codeString = String(rawCodeChildren || '').replace(/\n$/, "")
+    
+    // 检查是否是 Mermaid 图表
+    if (className.includes('language-mermaid')) {
       return (
         <div className="my-6" {...props}>
-          <CodeBlock className={className} inline={false}>
-            {codeString}
-          </CodeBlock>
+          <MermaidCodeBlock>{codeString}</MermaidCodeBlock>
         </div>
       )
     }
     
-    // 回退到默认处理
     return (
       <div className="my-6" {...props}>
-        {children}
+        <CodeBlock className={className} inline={false}>
+          {codeString}
+        </CodeBlock>
       </div>
     )
   },
