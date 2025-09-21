@@ -63,7 +63,8 @@ export function ColorPicker() {
   const [history, setHistory] = useState<ColorHistory[]>([])
   const [copySuccess, setCopySuccess] = useState<string>("")
   const [selectedPalette, setSelectedPalette] = useState<keyof typeof presetPalettes>("material")
-  const [customColors, setCustomColors] = useState<string[]>([])
+  const [inputValue, setInputValue] = useState("")
+  const [inputType, setInputType] = useState<"hex" | "rgb">("hex")
 
   // 颜色转换函数
   const hexToRgb = useCallback((hex: string) => {
@@ -189,9 +190,23 @@ export function ColorPicker() {
     updateColor(randomHex)
   }
 
-  const addToCustomPalette = () => {
-    if (!customColors.includes(currentColor.hex)) {
-      setCustomColors(prev => [currentColor.hex, ...prev.slice(0, 11)])
+  // 处理颜色输入
+  const handleColorInput = (value: string) => {
+    setInputValue(value)
+    
+    if (inputType === "hex") {
+      if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+        updateColor(value)
+      }
+    } else if (inputType === "rgb") {
+      const rgbMatch = value.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/)
+      if (rgbMatch) {
+        const [, r, g, b] = rgbMatch.map(Number)
+        if (r <= 255 && g <= 255 && b <= 255) {
+          const hex = rgbToHex(r, g, b)
+          updateColor(hex)
+        }
+      }
     }
   }
 
@@ -211,12 +226,18 @@ export function ColorPicker() {
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={generateRandomColor}>
             <Shuffle className="w-4 h-4 mr-1" />
-            随机
+            随机颜色
           </Button>
-          <Button variant="outline" size="sm" onClick={addToCustomPalette}>
-            <Palette className="w-4 h-4 mr-1" />
-            收藏
-          </Button>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="color-picker" className="text-sm">自定义:</Label>
+            <input
+              id="color-picker"
+              type="color"
+              value={currentColor.hex}
+              onChange={(e) => updateColor(e.target.value)}
+              className="w-8 h-8 rounded border border-border cursor-pointer"
+            />
+          </div>
         </div>
         
         <div className="flex items-center gap-2">
@@ -248,56 +269,93 @@ export function ColorPicker() {
             </div>
 
             {/* 颜色输入 */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="hex-input">HEX</Label>
+            <div className="space-y-4">
+              {/* 快速输入区域 */}
+              <div className="space-y-3">
+                <Label>快速输入颜色值</Label>
                 <div className="flex gap-2">
+                  <select
+                    value={inputType}
+                    onChange={(e) => setInputType(e.target.value as "hex" | "rgb")}
+                    className="px-3 py-2 border border-border rounded-md bg-background"
+                  >
+                    <option value="hex">HEX</option>
+                    <option value="rgb">RGB</option>
+                  </select>
                   <Input
-                    id="hex-input"
-                    value={currentColor.hex}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      if (/^#[0-9A-Fa-f]{0,6}$/.test(value)) {
-                        if (value.length === 7) {
-                          updateColor(value)
-                        }
-                      }
-                    }}
-                    className="font-mono"
+                    placeholder={inputType === "hex" ? "#FF5733" : "rgb(255, 87, 51)"}
+                    value={inputValue}
+                    onChange={(e) => handleColorInput(e.target.value)}
+                    className="font-mono flex-1"
                   />
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleCopy(currentColor.hex, "HEX")}
+                    onClick={() => {
+                      if (inputType === "hex" && /^#[0-9A-Fa-f]{6}$/.test(inputValue)) {
+                        updateColor(inputValue)
+                      } else if (inputType === "rgb") {
+                        const rgbMatch = inputValue.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/)
+                        if (rgbMatch) {
+                          const [, r, g, b] = rgbMatch.map(Number)
+                          if (r <= 255 && g <= 255 && b <= 255) {
+                            const hex = rgbToHex(r, g, b)
+                            updateColor(hex)
+                          }
+                        }
+                      }
+                    }}
                   >
-                    {copySuccess === "HEX" ? (
-                      <CheckCircle className="w-4 h-4" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
+                    <Eye className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>RGB</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={`rgb(${currentColor.rgb.r}, ${currentColor.rgb.g}, ${currentColor.rgb.b})`}
-                    readOnly
-                    className="font-mono text-sm"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCopy(`rgb(${currentColor.rgb.r}, ${currentColor.rgb.g}, ${currentColor.rgb.b})`, "RGB")}
-                  >
-                    {copySuccess === "RGB" ? (
-                      <CheckCircle className="w-4 h-4" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
-                  </Button>
+              {/* 当前颜色值显示 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="hex-display">HEX</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="hex-display"
+                      value={currentColor.hex}
+                      readOnly
+                      className="font-mono"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCopy(currentColor.hex, "HEX")}
+                    >
+                      {copySuccess === "HEX" ? (
+                        <CheckCircle className="w-4 h-4" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>RGB</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={`rgb(${currentColor.rgb.r}, ${currentColor.rgb.g}, ${currentColor.rgb.b})`}
+                      readOnly
+                      className="font-mono text-sm"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCopy(`rgb(${currentColor.rgb.r}, ${currentColor.rgb.g}, ${currentColor.rgb.b})`, "RGB")}
+                    >
+                      {copySuccess === "RGB" ? (
+                        <CheckCircle className="w-4 h-4" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -443,23 +501,7 @@ export function ColorPicker() {
                 ))}
               </Tabs>
 
-              {/* 自定义调色板 */}
-              {customColors.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-border">
-                  <h4 className="text-sm font-medium mb-2">收藏的颜色</h4>
-                  <div className="grid grid-cols-6 gap-2">
-                    {customColors.map((color, index) => (
-                      <button
-                        key={index}
-                        className="w-8 h-8 rounded border border-border hover:scale-110 transition-transform"
-                        style={{ backgroundColor: color }}
-                        onClick={() => updateColor(color)}
-                        title={color}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+
             </CardContent>
           </Card>
 
