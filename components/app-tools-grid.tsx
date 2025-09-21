@@ -18,7 +18,8 @@ import {
     Palette,
     QrCode,
     Settings,
-    PlayCircle
+    PlayCircle,
+    PencilRuler
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -104,6 +105,14 @@ const appTools: AppTool[] = [
     icon: PlayCircle,
     color: "text-red-500",
     available: true
+  },
+  {
+    id: "excalidraw",
+    name: "白板作图",
+    description: "手绘风白板（导出 PNG/SVG/工程）",
+    icon: PencilRuler,
+    color: "text-emerald-500",
+    available: true
   }
 ]
 
@@ -145,6 +154,9 @@ export function AppToolsGrid() {
           break
         case "video-learning":
           router.push("/tools/video-learning")
+          break
+        case "excalidraw":
+          router.push("/tools/excalidraw")
           break
         default:
           console.log(`Navigate to ${tool.id}`)
