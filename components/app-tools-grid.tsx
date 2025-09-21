@@ -21,7 +21,8 @@ import {
     PlayCircle,
     PencilRuler,
     Regex,
-    Signature
+    Signature,
+    Image as ImageIcon
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -125,6 +126,14 @@ const appTools: AppTool[] = [
     available: true
   },
   {
+    id: "image-base64",
+    name: "图片Base64",
+    description: "上传图片生成 Data URI / CSS / HTML",
+    icon: ImageIcon,
+    color: "text-rose-500",
+    available: true
+  },
+  {
     id: "regex-tester",
     name: "正则工具",
     description: "测试/生成/速查常见正则表达式",
@@ -178,6 +187,9 @@ export function AppToolsGrid() {
           break
         case "signature-designer":
           router.push("/tools/signature")
+          break
+        case "image-base64":
+          router.push("/tools/image-base64")
           break
         case "regex-tester":
           router.push("/tools/regex-tester")
