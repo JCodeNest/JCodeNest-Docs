@@ -10,6 +10,7 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { siteConfig } from "@/config/site";
 import { Separator } from "@/components/ui/separator";
 import {
     SidebarInset,
@@ -32,13 +33,13 @@ export default function Home() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">
-                    JCodeNest 文档
+                  <BreadcrumbLink href={siteConfig.breadcrumb.rootHref}>
+                    {siteConfig.breadcrumb.rootLabel}
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>首页</BreadcrumbPage>
+                  <BreadcrumbPage>{siteConfig.breadcrumb.currentLabel}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

@@ -29,6 +29,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { siteConfig } from "@/config/site"
+
+const iconMap = { Github, MessageSquare }
 
 // 导入内容上下文
 const ContentContext = React.createContext<{
@@ -46,23 +49,11 @@ export const useContent = () => {
 
 // 动态数据将在组件内部获取
 const staticData = {
-  user: {
-    name: "沉默的老李",
-    email: "jcodenest@gmail.com",
-    avatar: "/avatars/avatar.png",
-  },
-  navSecondary: [
-    {
-      title: "Github",
-      url: "https://github.com/JCodeNest/JCodeNest-Docs",
-      icon: Github,
-    },
-    {
-      title: "反馈",
-      url: "https://github.com/JCodeNest/JCodeNest-Docs/issues/new",
-      icon: MessageSquare,
-    },
-  ],
+  user: siteConfig.user,
+  navSecondary: siteConfig.navSecondary.map((item) => ({
+    ...item,
+    icon: iconMap[item.icon as keyof typeof iconMap],
+  })),
 }
 
 type NavNode = {
@@ -108,9 +99,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/">
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden">
+              {/* TIP：这里的 bg-white 是侧边栏顶部 logo 的背景色，如果你的 logo 颜色特殊，可以根据需要修改。*/}
+                <div className="bg-white text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden">
                   <Image 
-                    src="/avatars/avatar.png" 
+                    src={siteConfig.logo.src} 
                     alt="JCodeNest Logo" 
                     width={32} 
                     height={32} 
@@ -118,8 +110,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">JcodeNest Document</span>
-                  <span className="truncate text-xs">A Backend Engineer</span>
+                  <span className="truncate font-medium">{siteConfig.name}</span>
+                  <span className="truncate text-xs">{siteConfig.subtitle}</span>
                 </div>
               </Link>
             </SidebarMenuButton>

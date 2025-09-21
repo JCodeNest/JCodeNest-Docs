@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import AppClientRoot from "@/components/app-client-root";
 import "./globals.css";
-
+import { siteConfig } from "@/config/site";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,8 +15,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "JCodeNest Document",
-  description: "沉默老李的技术笔记",
+  // 标题与描述
+  title: siteConfig.seo.title,
+  description: siteConfig.seo.description,
+  // 关键词与作者
+  keywords: siteConfig.seo.keywords,
+  authors: siteConfig.seo.authors,
+  // 主题色
+  themeColor: siteConfig.seo.themeColor,
+  // Open Graph
+  openGraph: siteConfig.seo.openGraph,
+  // Twitter 卡片
+  twitter: siteConfig.seo.twitter,
+  // 浏览器标签图标
+  icons: {
+    icon: siteConfig.seo.icons?.favicon,
+  },
 };
 
 export default function RootLayout({
@@ -27,7 +41,7 @@ export default function RootLayout({
 
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="zh-CN" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
