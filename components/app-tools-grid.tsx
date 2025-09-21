@@ -158,6 +158,14 @@ const appTools: AppTool[] = [
     icon: Clock3,
     color: "text-amber-600",
     available: true
+  },
+  {
+    id: "image-compressor",
+    name: "图片压缩",
+    description: "浏览器端高质量图片压缩：多图/格式/质量/尺寸",
+    icon: ImageIcon,
+    color: "text-cyan-700",
+    available: true
   }
 ]
 
@@ -217,6 +225,9 @@ export function AppToolsGrid() {
           break
         case "timestamp-converter":
           router.push("/tools/timestamp-converter")
+          break
+        case "image-compressor":
+          router.push("/tools/image-compressor")
           break
         default:
           console.log(`Navigate to ${tool.id}`)
