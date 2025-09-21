@@ -5,8 +5,22 @@ import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Download, ImageDown, FileDown, Upload, Save, AlertCircle } from "lucide-react";
+import { Download, ImageDown, FileDown, Upload, AlertCircle } from "lucide-react";
 import "@excalidraw/excalidraw/index.css";
+/**
+ * Minimal local typings to decouple from @excalidraw/excalidraw type exports.
+ * Keep unknown/Record to satisfy @typescript-eslint/no-explicit-any.
+ */
+type ExcalidrawElement = Record<string, unknown>;
+type LocalAppState = Record<string, unknown>;
+type ExcalidrawImperativeAPI = {
+  updateScene: (scene: {
+    elements?: readonly ExcalidrawElement[] | null;
+    appState?: Partial<LocalAppState> | null;
+    collaborators?: Map<unknown, unknown>;
+    captureUpdate?: unknown;
+  }) => void;
+};
 
 // 动态加载 Excalidraw，避免 SSR 报错
 const ExcalidrawLazy = dynamic(async () => {
@@ -22,9 +36,9 @@ const ExcalidrawLazy = dynamic(async () => {
 });
 
 type SceneSnapshot = {
-  elements: readonly any[];
-  appState: any;
-  files: Record<string, any>;
+  elements: readonly ExcalidrawElement[];
+  appState: unknown;
+  files: Record<string, unknown>;
 };
 
 const LS_KEY = "excalidraw:auto-save";
@@ -38,7 +52,7 @@ export default function ExcalidrawClient() {
   const [dirty, setDirty] = React.useState<boolean>(false);
 
   const sceneRef = React.useRef<SceneSnapshot | null>(null);
-  const apiRef = React.useRef<any>(null);
+  const apiRef = React.useRef<unknown>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   // 初始化读取 LocalStorage 开关
@@ -68,7 +82,8 @@ export default function ExcalidrawClient() {
     try {
       const scene = sceneRef.current;
       if (!scene) return;
-      const { collaborators: _ignored, ...restAppState } = (scene as any).appState || {};
+      const restAppState = { ...(((scene as unknown as { appState: Record<string, unknown> }).appState) || {}) } as Record<string, unknown> & { collaborators?: unknown };
+      delete restAppState.collaborators;
       const payload = {
         elements: scene.elements,
         appState: restAppState,
@@ -87,9 +102,15 @@ export default function ExcalidrawClient() {
       const parsed = JSON.parse(raw);
       // 需要 API 来更新场景
       if (apiRef.current && parsed?.elements && parsed?.appState) {
-        apiRef.current.updateScene({
-          elements: parsed.elements,
-          appState: normalizeAppState(parsed.appState),
+        (apiRef.current as {
+          updateScene: (scene: {
+            elements?: readonly ExcalidrawElement[] | null;
+            appState?: Partial<LocalAppState> | null;
+            collaborators?: Map<unknown, unknown>;
+          }) => void;
+        }).updateScene({
+          elements: parsed.elements as readonly ExcalidrawElement[],
+          appState: normalizeAppState(parsed.appState) as Partial<LocalAppState>,
         });
       }
     } catch {}
@@ -117,9 +138,11 @@ export default function ExcalidrawClient() {
   };
 
   // 规范化 appState：确保 collaborators 为 Map，避免 forEach 报错
-  const normalizeAppState = (input: any) => {
-    const { collaborators: _ignored, ...rest } = input || {};
-    return { ...rest, collaborators: new Map() };
+  const normalizeAppState = (input: unknown) => {
+    const base = (input && typeof input === "object") ? (input as Record<string, unknown>) : {};
+    const rest = { ...base } as Record<string, unknown> & { collaborators?: unknown };
+    delete rest.collaborators;
+    return { ...rest, collaborators: new Map() } as Record<string, unknown>;
   };
 
   const handleExportPNG = async () => {
@@ -131,7 +154,7 @@ export default function ExcalidrawClient() {
       const blob = await exportToBlob({
         elements: scene.elements,
         appState: {
-          ...scene.appState,
+          ...(typeof scene.appState === "object" && scene.appState !== null ? (scene.appState as Record<string, unknown>) : {}),
           exportWithDarkMode: false,
           exportBackground: !transparent,
         },
@@ -203,9 +226,15 @@ export default function ExcalidrawClient() {
       const text = await file.text();
       const data = JSON.parse(text);
       if (apiRef.current && data?.elements && data?.appState) {
-        apiRef.current.updateScene({
-          elements: data.elements,
-          appState: normalizeAppState(data.appState),
+        (apiRef.current as {
+          updateScene: (scene: {
+            elements?: readonly ExcalidrawElement[] | null;
+            appState?: Partial<LocalAppState> | null;
+            collaborators?: Map<unknown, unknown>;
+          }) => void;
+        }).updateScene({
+          elements: data.elements as readonly ExcalidrawElement[],
+          appState: normalizeAppState(data.appState) as Partial<LocalAppState>,
           // files 可选
         });
       }
@@ -306,14 +335,10 @@ export default function ExcalidrawClient() {
               export: false,
             },
           }}
-          excalidrawAPI={(api: any) => {
+          excalidrawAPI={(api) => {
             apiRef.current = api;
           }}
-          onChange={(
-            elements: readonly any[],
-            appState: any,
-            files: Record<string, any>
-          ) => {
+          onChange={(elements, appState, files) => {
             sceneRef.current = { elements, appState, files };
             setDirty(true);
             persistIfNeeded();
