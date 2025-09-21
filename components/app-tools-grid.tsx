@@ -22,7 +22,8 @@ import {
     PencilRuler,
     Regex,
     Signature,
-    Image as ImageIcon
+    Image as ImageIcon,
+    Sigma
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -140,6 +141,14 @@ const appTools: AppTool[] = [
     icon: Regex,
     color: "text-purple-500",
     available: true
+  },
+  {
+    id: "base-converter",
+    name: "进制转换",
+    description: "2–36 进制转换与格式化",
+    icon: Sigma,
+    color: "text-sky-500",
+    available: true
   }
 ]
 
@@ -193,6 +202,9 @@ export function AppToolsGrid() {
           break
         case "regex-tester":
           router.push("/tools/regex-tester")
+          break
+        case "base-converter":
+          router.push("/tools/base-converter")
           break
         default:
           console.log(`Navigate to ${tool.id}`)
