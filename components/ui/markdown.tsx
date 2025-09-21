@@ -7,7 +7,7 @@ import { MarkdownImage } from "@/components/ui/image-preview"
 import { MermaidCodeBlock } from "@/components/ui/mermaid"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
-import { Check, Copy, ExternalLink } from "lucide-react"
+import { Check, Copy, ExternalLink, Info, AlertTriangle, AlertOctagon } from "lucide-react"
 import { useTheme } from "next-themes"
 import * as React from "react"
 import type { Components } from "react-markdown"
@@ -22,6 +22,23 @@ import remarkMath from "remark-math"
 import remarkToc from "remark-toc"
 import type { Pluggable } from "unified"
 
+/**
+ * 调试开关：在浏览器控制台执行
+ *   window.__MD_DEBUG = true
+ * 再刷新即可看到 Markdown 引用块的调试输出
+ */
+declare global {
+  interface Window {
+    __MD_DEBUG?: boolean
+  }
+}
+const __mdDebug = (...args: any[]) => {
+  if (typeof window !== "undefined" && (window as any).__MD_DEBUG) {
+    // eslint-disable-next-line no-console
+    console.log("[MD-BQ]", ...args)
+  }
+}
+
 // KaTeX CSS import
 import "katex/dist/katex.min.css"
 
@@ -31,6 +48,35 @@ function stripFrontmatter(text: string): string {
   const frontmatterPattern = /^---\n[\s\S]*?\n---\n?/
   return text.replace(frontmatterPattern, "")
 }
+
+/**
+ * 将指令块语法转换为引用块，便于后续 blockquote 渲染卡片样式
+ * 支持：
+ * ::tip 标题
+ * 正文...
+ * ::
+ *
+ * ::warning 标题
+ * 正文...
+ * ::
+ *
+ * ::error / ::danger 标题
+ * 正文...
+ * ::
+ */
+function transformAdmonitionsToBlockquote(src: string): string {
+  const pattern = /^[\t \u00A0\u3000]*[:：]{2}(tip|warning|error|danger)[ \t\u00A0\u3000]*(.*)\n([\s\S]*?)\n[\t \u00A0\u3000]*[:：]{2}[ \t]*$/gmi
+  return src.replace(pattern, (_m, t: string, title: string, body: string) => {
+    // 规范化类型（danger 归一为 error，由 blockquote 解析处理）
+    const type = String(t || "").toLowerCase()
+    const header = `> ::${type} ${title ?? ""}`.trimEnd()
+    const bodyLines = body.split(/\r?\n/).map((line) => `> ${line}`).join("\n")
+    return `${header}\n${bodyLines}`
+  })
+}
+
+/** 引用块嵌套深度上下文：根为 0，嵌套逐层 +1 */
+const QuoteDepthCtx = React.createContext(0)
 
 export interface MarkdownProps {
   children: string
@@ -278,42 +324,140 @@ const createDefaultComponents = (variant: MarkdownProps["variant"]): Partial<Com
     </li>
   ),
 
-  // 引用块
-  blockquote: ({ children, ...props }) => (
-    <blockquote
-      className={cn(
-        // 基础样式：与HTML块保持一致的设计
-        "my-6 rounded-lg",
-        // 背景色：模拟 #f0f8ff 的浅蓝色背景
-        "bg-blue-50 dark:bg-blue-950/30",
-        // 内边距：使用 1rem 等效的 Tailwind 类
-        "px-4 py-4",
-        // 字体样式：保持斜体但增强可读性
-        "italic text-foreground",
-        // 阴影效果增强视觉层次
-        "shadow-sm",
-        // 内部元素间距控制
-        "[&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
-        // 嵌套引用块样式
-        "[&_blockquote]:my-4 [&_blockquote]:ml-4 [&_blockquote]:border-l-2",
-        "[&_blockquote]:bg-blue-100/50 dark:[&_blockquote]:bg-blue-900/20 [&_blockquote]:px-4 [&_blockquote]:py-3",
-        // 内部段落间距优化
-        "[&_p]:my-3 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0",
-        // 内部列表间距优化
-        "[&_ul]:my-3 [&_ol]:my-3 [&_li]:my-1",
-        // 内部代码块间距优化
-        "[&_pre]:my-4 [&_code]:bg-blue-100 dark:[&_code]:bg-blue-900/40",
-        // 内部表格间距优化
-        "[&_table]:my-4",
-        // 响应式调整
-        variant === "compact" && "my-4 px-3 py-3 text-sm [&_p]:my-2",
-        variant === "article" && "my-8 px-6 py-5 text-lg [&_p]:my-4"
-      )}
-      {...props}
-    >
-      {children}
-    </blockquote>
-  ),
+  // 引用块（支持 ::tip | ::warning | ::error | ::danger，默认 tip）
+  blockquote: ({ children, ...props }) => {
+    const depth = React.useContext(QuoteDepthCtx)
+    const nodes = React.Children.toArray(children)
+    const first = nodes[0] as any
+    // 提取首段纯文本
+    const getNodeText = (n: any): string => {
+      if (typeof n === "string") return n
+      if (Array.isArray(n)) return n.map(getNodeText).join("")
+      if (React.isValidElement(n)) {
+        const el = n as React.ReactElement<any>
+        return getNodeText((el.props as any)?.children)
+      }
+      return ""
+    }
+    // 找到第一个非空文本节点作为候选首行
+    let firstIndex = -1
+    for (let i = 0; i < nodes.length; i++) {
+      const t = getNodeText(nodes[i]).trim()
+      if (t.length > 0) { firstIndex = i; break }
+    }
+    const firstNode = firstIndex >= 0 ? nodes[firstIndex] : null
+    const firstText = firstNode ? getNodeText(firstNode).trim() : ""
+    // 仅取“首行”匹配（避免包含正文导致整段匹配失败）
+    const firstLine = firstText.split(/\r?\n/)[0]?.trim() ?? ""
+    __mdDebug("firstIndex", firstIndex, "firstLine", firstLine)
+
+    // 兼容：前导空白/中文空格、半角/全角冒号；支持 tip|warning|error|danger（danger 视为 error）
+    const m = firstLine.match(/^[\s\u00A0\u3000]*[:：]{2}(tip|warning|error|danger)\b[ \t\u00A0\u3000]*([^\r\n]*)/i)
+    const rawType = (m ? (m[1] as string).toLowerCase() : "tip") as "tip" | "warning" | "error" | "danger"
+    const type = (rawType === "danger" ? "error" : rawType) as "tip" | "warning" | "error"
+    const title = (m && m[2] && (m[2] as string).trim().length > 0)
+      ? (m[2] as string).trim()
+      : (type === "warning" ? "注意" : type === "error" ? "错误" : "提示")
+
+    // 从首个节点中移除“首行”文本，保留其余 Markdown 结构
+    const removeFirstLineFromReactNode = (n: any): any => {
+      if (typeof n === "string") return n.replace(/^[^\r\n]*\r?\n?/, "")
+      if (Array.isArray(n)) return n.map(removeFirstLineFromReactNode)
+      if (React.isValidElement(n)) {
+        const el = n as React.ReactElement<any>
+        return React.cloneElement(
+          el,
+          { ...el.props },
+          removeFirstLineFromReactNode((el.props as any)?.children)
+        )
+      }
+      return n
+    }
+
+    // 命中则替换首节点为“去掉首行”的版本；未命中保持原 nodes
+    const bodyChildren = m
+      ? [
+          ...nodes.slice(0, firstIndex),
+          firstNode && React.isValidElement(firstNode)
+            ? React.cloneElement(
+                firstNode as any,
+                { ...(firstNode as any).props },
+                removeFirstLineFromReactNode((firstNode as any).props?.children)
+              )
+            : (typeof firstNode === "string" ? removeFirstLineFromReactNode(firstNode) : firstNode),
+          ...nodes.slice(firstIndex + 1),
+        ].filter(Boolean)
+      : nodes
+
+    __mdDebug("match", m, "type", type, "title", title, "bodyLen", bodyChildren.length)
+
+    const clsByType = {
+      tip: {
+        box: "bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800",
+        title: "text-blue-700 dark:text-blue-400",
+        text: "text-blue-600 dark:text-blue-500",
+        icon: <Info className="w-4 h-4 text-blue-500 mt-0.5" />,
+      },
+      warning: {
+        box: "bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800",
+        title: "text-amber-700 dark:text-amber-400",
+        text: "text-amber-600 dark:text-amber-500",
+        icon: <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5" />,
+      },
+      error: {
+        box: "bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800",
+        title: "text-red-700 dark:text-red-400",
+        text: "text-red-600 dark:text-red-500",
+        icon: <AlertOctagon className="w-4 h-4 text-red-500 mt-0.5" />,
+      },
+    } as const
+
+    const isDirective = !!m
+    const isNested = depth > 0
+
+    // 嵌套且无指令：使用轻量样式（更淡背景/边框、更紧凑留白）
+    const nestedBox = "bg-blue-50/40 dark:bg-blue-950/10 border border-blue-200/60 dark:border-blue-800/50"
+    const nestedTitle = "text-blue-700/90 dark:text-blue-300/90"
+    const nestedText = "text-blue-700/80 dark:text-blue-400/80"
+
+    const cur = isDirective || !isNested
+      ? clsByType[type]
+      : { box: nestedBox, title: nestedTitle, text: nestedText, icon: <Info className="w-4 h-4 text-blue-500 mt-0.5" /> }
+
+    const containerClasses = cn(
+      "my-6 rounded-lg p-3",
+      cur.box,
+      variant === "article" && "my-8 p-4",
+      isNested && "my-4 p-3"
+    )
+
+    return (
+      <QuoteDepthCtx.Provider value={depth + 1}>
+        <blockquote className={containerClasses} {...props}>
+        <div className="flex items-start gap-2">
+          {cur.icon}
+          <div>
+            <p className={cn("text-sm font-medium", cur.title)}>{title}</p>
+            <div className={cn(
+              "mt-1 text-[0.95rem] leading-6",
+              // 段落与列表间距
+              "[&_p]:my-2 [&_ul]:my-2 [&_ol]:my-2 [&_li]:mt-1",
+              // 代码块与行内代码可读性与间距
+              "[&_pre]:my-3 [&_pre]:!text-[13px] [&_code]:!text-[13px]",
+              // 表格占满卡片内部宽度并留足空间
+              "[&_table]:my-3 [&_table]:w-full",
+              // 文章模式再稍大一点
+              variant === "article" && "text-[1rem] leading-7",
+              cur.text
+            )}>
+              {bodyChildren.length > 0 ? bodyChildren : null}
+            </div>
+          </div>
+        </div>
+        </blockquote>
+      </QuoteDepthCtx.Provider>
+    )
+  },
 
   // 代码 - 分离行内和块级处理
   code: ({ children, className, inline }: {children?: React.ReactNode, className?: string, inline?: boolean}) => {
@@ -471,6 +615,23 @@ const createDefaultComponents = (variant: MarkdownProps["variant"]): Partial<Com
       {children}
     </mark>
   ),
+  // 键盘按键
+  kbd: ({ children, ...props }) => (
+    <kbd
+      className={cn(
+        "inline-flex items-center justify-center align-baseline",
+        "rounded-md border border-border/60",
+        "bg-muted text-foreground/90",
+        "shadow-[inset_0_-1px_0_rgba(0,0,0,0.15)]",
+        "mx-0.5 px-1.5 py-0.5 font-mono text-[12px] leading-none",
+        variant === "compact" && "text-[11px] px-1 py-0.5",
+        variant === "article" && "text-[13px] px-2 py-1"
+      )}
+      {...props}
+    >
+      {children}
+    </kbd>
+  ),
 })
 
 export function Markdown({
@@ -489,7 +650,11 @@ export function Markdown({
   // 预处理文本，将 ==text== 语法转换为 <mark> 标签
   const preprocessedContent = React.useMemo(() => {
     const stripped = stripFrontmatter(children)
-    return stripped.replace(/==(.*?)==/g, '<mark>$1</mark>')
+    // 文本高亮 ==text==
+    let s = stripped.replace(/==(.*?)==/g, '<mark>$1</mark>')
+    // 指令块 ::tip/::warning/::error/::danger 转为引用块，复用 blockquote 卡片渲染
+    s = transformAdmonitionsToBlockquote(s)
+    return s
   }, [children])
   // 构建插件数组
   const remarkPlugins = React.useMemo(() => {
@@ -526,14 +691,16 @@ export function Markdown({
       variant === "article" && "prose-lg prose-headings:font-bold",
       className
     )}>
-      <ReactMarkdown
-        components={components}
-        remarkPlugins={remarkPlugins}
-        rehypePlugins={rehypePlugins}
-        skipHtml={false}
-      >
-        {preprocessedContent}
-      </ReactMarkdown>
+      <QuoteDepthCtx.Provider value={0}>
+        <ReactMarkdown
+          components={components}
+          remarkPlugins={remarkPlugins}
+          rehypePlugins={rehypePlugins}
+          skipHtml={false}
+        >
+          {preprocessedContent}
+        </ReactMarkdown>
+      </QuoteDepthCtx.Provider>
     </div>
   )
 
