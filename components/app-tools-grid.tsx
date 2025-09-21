@@ -25,7 +25,8 @@ import {
     Image as ImageIcon,
     Sigma,
     Clock3,
-    ScanText
+    ScanText,
+    ListOrdered
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -175,6 +176,14 @@ const appTools: AppTool[] = [
     icon: ScanText,
     color: "text-lime-600",
     available: true
+  },
+  {
+    id: "http-status-codes",
+    name: "HTTP 状态码",
+    description: "最新状态码·检索与分类展示",
+    icon: ListOrdered,
+    color: "text-blue-700",
+    available: true
   }
 ]
 
@@ -240,6 +249,9 @@ export function AppToolsGrid() {
           break
         case "ocr-recognizer":
           router.push("/tools/ocr-recognizer")
+          break
+        case "http-status-codes":
+          router.push("/tools/http-status-codes")
           break
         default:
           console.log(`Navigate to ${tool.id}`)
