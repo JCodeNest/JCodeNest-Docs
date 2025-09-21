@@ -23,7 +23,8 @@ import {
     Regex,
     Signature,
     Image as ImageIcon,
-    Sigma
+    Sigma,
+    Clock3
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -149,6 +150,14 @@ const appTools: AppTool[] = [
     icon: Sigma,
     color: "text-sky-500",
     available: true
+  },
+  {
+    id: "timestamp-converter",
+    name: "时间戳转换",
+    description: "实时时间戳与日期互转，秒/毫秒与时区切换",
+    icon: Clock3,
+    color: "text-amber-600",
+    available: true
   }
 ]
 
@@ -205,6 +214,9 @@ export function AppToolsGrid() {
           break
         case "base-converter":
           router.push("/tools/base-converter")
+          break
+        case "timestamp-converter":
+          router.push("/tools/timestamp-converter")
           break
         default:
           console.log(`Navigate to ${tool.id}`)
