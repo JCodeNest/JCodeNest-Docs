@@ -37,13 +37,13 @@ import {
 
 export function NavUser({
   user,
-}: {
+}: Readonly<{
   user: {
     name: string
     email: string
     avatar: string
   }
-}) {
+}>) {
   const { isMobile } = useSidebar()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
@@ -52,28 +52,6 @@ export function NavUser({
   React.useEffect(() => {
     setMounted(true)
   }, [])
-
-  const getThemeIcon = (themeName: string) => {
-    switch (themeName) {
-      case 'light':
-        return <Sun className="h-4 w-4" />
-      case 'dark':
-        return <Moon className="h-4 w-4" />
-      default:
-        return <Monitor className="h-4 w-4" />
-    }
-  }
-
-  const getThemeLabel = (themeName: string) => {
-    switch (themeName) {
-      case 'light':
-        return '亮色模式'
-      case 'dark':
-        return '暗色模式'
-      default:
-        return '跟随系统'
-    }
-  }
 
   return (
     <SidebarMenu>

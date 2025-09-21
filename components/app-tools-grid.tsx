@@ -1,28 +1,27 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog"
-import { 
-  Code2, 
-  Globe, 
-  Calculator, 
-  Palette, 
-  FileJson, 
-  Hash, 
-  QrCode, 
-  Image,
-  Zap,
-  Settings
+import {
+    Calculator,
+    FileJson,
+    Globe,
+    Hash,
+    Image,
+    Palette,
+    QrCode,
+    Settings,
+    PlayCircle
 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
 
 interface AppTool {
   id: string
@@ -97,6 +96,14 @@ const appTools: AppTool[] = [
     icon: Globe,
     color: "text-yellow-500",
     available: true
+  },
+  {
+    id: "video-learning",
+    name: "视频学习",
+    description: "视频资源与检索",
+    icon: PlayCircle,
+    color: "text-red-500",
+    available: true
   }
 ]
 
@@ -136,6 +143,9 @@ export function AppToolsGrid() {
         case "site-nav":
           router.push("/tools/site-nav")
           break
+        case "video-learning":
+          router.push("/tools/video-learning")
+          break
         default:
           console.log(`Navigate to ${tool.id}`)
       }
@@ -144,8 +154,8 @@ export function AppToolsGrid() {
 
   return (
     <>
-      <div className="w-full h-full overflow-hidden">
-        <div className="grid grid-cols-4 grid-rows-2 gap-3 h-full">
+      <div className="w-full h-full overflow-y-auto">
+        <div className="grid grid-cols-4 grid-rows-2 gap-3">
           {appTools.map((tool) => {
             const IconComponent = tool.icon
             return (

@@ -88,7 +88,7 @@ export function GlobalPromoDialog() {
             {/* 搜索能力 */}
             <li className="flex items-start"><span className="mt-1 mr-2 size-1.5 rounded-full bg-primary" /> 内置搜索能力：无需第三方插件，开箱即用</li>
             {/* 工具集 + 移动端 */}
-            <li className="flex items-start"><span className="mt-1 mr-2 size-1.5 rounded-full bg-primary" /> 工具集与移动端适配：哈希/二维码/图片转换；目录抽屉/返回顶部/卡片布局</li>
+            <li className="flex items-start"><span className="mt-1 mr-2 size-1.5 rounded-full bg-primary" /> 工具集与移动端适配：哈希/二维码/图片转换/视频学习；目录抽屉/返回顶部/卡片布局</li>
           </ul>
 
           {/* 次要链接 */}
