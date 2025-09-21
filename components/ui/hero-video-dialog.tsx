@@ -81,6 +81,43 @@ export function HeroVideoDialog({
   const [imgError, setImgError] = useState(false);
   const selectedAnimation = animationVariants[animationStyle];
 
+  // 规范化视频地址（仅对 YouTube 处理；B 站保持原样）
+  const normalized = (() => {
+    try {
+      const href = videoSrc.trim();
+      const isYouTube =
+        href.includes("youtube.com") || href.includes("youtu.be") || href.includes("youtube-nocookie.com");
+      if (!isYouTube) return { src: href, originUrl: href, isYouTube: false };
+
+      // 取出视频ID并拼成 nocookie 域名
+      let id = "";
+      if (href.includes("youtu.be/")) {
+        id = href.split("youtu.be/")[1]?.split(/[?&]/)[0] ?? "";
+      } else if (href.includes("/embed/")) {
+        id = href.split("/embed/")[1]?.split(/[?&]/)[0] ?? "";
+      } else if (href.includes("/watch")) {
+        const u = new URL(href.startsWith("http") ? href : `https://${href}`);
+        id = u.searchParams.get("v") ?? "";
+      }
+      if (!id) return { src: href, originUrl: href, isYouTube: true };
+
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const base = `https://www.youtube-nocookie.com/embed/${id}`;
+      const params = new URLSearchParams({
+        modestbranding: "1",
+        rel: "0",
+        playsinline: "1",
+        enablejsapi: "1",
+      });
+      if (origin) params.set("origin", origin);
+      const src = `${base}?${params.toString()}`;
+      const originUrl = `https://www.youtube.com/watch?v=${id}`;
+      return { src, originUrl, isYouTube: true };
+    } catch {
+      return { src: videoSrc, originUrl: videoSrc, isYouTube: false };
+    }
+  })();
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -132,12 +169,25 @@ export function HeroVideoDialog({
             </button>
             <div className="relative isolate z-[1] size-full overflow-hidden rounded-2xl border border-white/20 shadow-2xl">
               <iframe
-                src={videoSrc}
+                src={normalized.src}
                 title="Hero Video player"
                 className="size-full rounded-2xl"
+                referrerPolicy="strict-origin-when-cross-origin"
                 allowFullScreen
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               />
+              {normalized.isYouTube ? (
+                <div className="pointer-events-auto absolute right-3 bottom-3">
+                  <a
+                    href={normalized.originUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center rounded-md bg-neutral-900/70 px-2.5 py-1 text-xs text-white ring-1 ring-white/20 hover:bg-neutral-900/85 backdrop-blur-md"
+                  >
+                    在 YouTube 打开
+                  </a>
+                </div>
+              ) : null}
             </div>
           </motion.div>
         </motion.div>
