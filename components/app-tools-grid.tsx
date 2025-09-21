@@ -24,7 +24,8 @@ import {
     Signature,
     Image as ImageIcon,
     Sigma,
-    Clock3
+    Clock3,
+    ScanText
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -166,6 +167,14 @@ const appTools: AppTool[] = [
     icon: ImageIcon,
     color: "text-cyan-700",
     available: true
+  },
+  {
+    id: "ocr-recognizer",
+    name: "图片文字识别",
+    description: "Tesseract.js 前端离线 OCR（中文/英文、预处理、并发）",
+    icon: ScanText,
+    color: "text-lime-600",
+    available: true
   }
 ]
 
@@ -228,6 +237,9 @@ export function AppToolsGrid() {
           break
         case "image-compressor":
           router.push("/tools/image-compressor")
+          break
+        case "ocr-recognizer":
+          router.push("/tools/ocr-recognizer")
           break
         default:
           console.log(`Navigate to ${tool.id}`)
