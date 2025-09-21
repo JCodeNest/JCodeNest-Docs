@@ -203,10 +203,12 @@ export function BlogGrid() {
         <BentoGridItem
           title={post.title}
           description={
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground line-clamp-2">{post.summary}</p>
+            <div className="flex flex-col h-full min-h-0 overflow-hidden">
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <p className="text-sm text-muted-foreground line-clamp-1 leading-relaxed">{post.summary}</p>
+              </div>
               {(post.readTime || post.publishDate) && (
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-3 flex-shrink-0">
                   <Badge variant="secondary" className="text-xs">
                     {post.category}
                   </Badge>
