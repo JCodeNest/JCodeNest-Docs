@@ -4,6 +4,9 @@ import { TableOfContents } from "@/components/ui/table-of-contents"
 import { BackToTop } from "@/components/ui/back-to-top"
 import { ChapterNavigation } from "@/components/ui/chapter-navigation"
 import { cn } from "@/lib/utils"
+import { siteConfig } from "@/config/site"
+import { Button } from "@/components/ui/button"
+import { Lock, Unlock } from "lucide-react"
 
 // 预定义的配置变体
 export const MarkdownPresets = {
@@ -101,11 +104,102 @@ export function MarkdownWithPreset({
 export function MarkdownArticle({ 
   children, 
   className,
-  currentPath, // 新增当前文档路径参数
+  currentPath, 
   ...props 
 }: Omit<React.ComponentProps<typeof Markdown>, 'variant'> & {
   currentPath?: string
 }) {
+  // 解析 frontmatter 的 password 字段（true/false，默认 false）
+  const parsePasswordFlag = React.useCallback((src: string): boolean => {
+    // 仅在开头匹配 frontmatter
+    const m = src.match(/^---\n([\s\S]*?)\n---\n?/)
+    if (!m) return false
+    const block = m[1]
+    // 粗粒度解析：逐行找 password: 值
+    const lines = block.split(/\r?\n/)
+    for (const line of lines) {
+      const mm = line.match(/^\s*password\s*:\s*(.+)\s*$/i)
+      if (mm) {
+        const v = mm[1].trim().toLowerCase()
+        return v === "true" || v === "yes" || v === "1"
+      }
+    }
+    return false
+  }, [])
+
+  const isProtected = React.useMemo(() => parsePasswordFlag(children), [children, parsePasswordFlag])
+  const [inputPwd, setInputPwd] = React.useState("")
+  const [unlocked, setUnlocked] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+
+  const onUnlock = React.useCallback(() => {
+    const expected = siteConfig?.security?.docPassword || ""
+    if (!expected) {
+      // 若未配置密码，则直接放行以避免锁死
+      setUnlocked(true)
+      setError(null)
+      return
+    }
+    if (inputPwd === expected) {
+      setUnlocked(true)
+      setError(null)
+    } else {
+      setError("密码不正确，请重试")
+    }
+  }, [inputPwd])
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      onUnlock()
+    }
+  }
+
+  const renderLocked = () => (
+    <div className={cn("relative max-w-none w-full", className)}>
+      <div className="w-full rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/70 dark:bg-blue-950/20 p-6 md:p-8">
+        <div className="flex items-start gap-3">
+          <div className="shrink-0 rounded-md bg-blue-100 dark:bg-blue-900/40 p-2">
+            <Lock className="w-5 h-5 text-blue-600 dark:text-blue-300" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-xl font-semibold text-blue-800 dark:text-blue-200">加密文档</h3>
+            <p className="mt-2 text-blue-700/90 dark:text-blue-300/90">
+              本文已被加密，输入正确密码后方可查看内容。
+            </p>
+
+            <div className="mt-4 flex flex-col sm:flex-row gap-2">
+              <input
+                type="password"
+                className="flex h-10 w-full sm:w-72 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                placeholder="请输入文档密码"
+                value={inputPwd}
+                onChange={(e) => setInputPwd(e.target.value)}
+                onKeyDown={onKeyDown}
+                aria-label="文档密码"
+              />
+              <Button onClick={onUnlock} className="inline-flex items-center gap-1">
+                <Unlock className="w-4 h-4" />
+                解锁
+              </Button>
+            </div>
+            {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
+
+            <div className="mt-4 text-xs text-foreground/70">
+              温馨提示：密码由站点“全局配置”统一管理，若遗忘请联系站长。
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* 返回顶部保持可用 */}
+      <BackToTop />
+    </div>
+  )
+
+  if (isProtected && !unlocked) {
+    return renderLocked()
+  }
+
   return (
     <div className="relative">
       <Markdown
@@ -118,13 +212,13 @@ export function MarkdownArticle({
       >
         {children}
       </Markdown>
-      
+
       {/* 章节导航 */}
       <ChapterNavigation currentPath={currentPath} />
-      
+
       {/* 悬浮目录 */}
       <TableOfContents content={children} />
-      
+
       {/* 返回顶部按钮 */}
       <BackToTop />
     </div>

@@ -38,6 +38,11 @@ export interface SiteConfig {
     url: string
     icon: 'Github' | 'MessageSquare'
   }[]
+  // 安全配置
+  security: {
+    // 文档解锁密码（留空表示未设置，全站不启用密码）
+    docPassword: string
+  }
   // SEO 配置（用于注入 Head，提升 SEO 友好性）
   seo: {
     // 页面默认标题
@@ -116,6 +121,11 @@ export const siteConfig: SiteConfig = {
     { title: "Github", url: "https://github.com/JCodeNest/JCodeNest-Docs", icon: "Github" },
     { title: "反馈", url: "https://github.com/JCodeNest/JCodeNest-Docs/issues/new", icon: "MessageSquare" },
   ],
+  // 安全配置
+  security: {
+    // 文档解锁密码（留空表示未设置，全站不启用密码）
+    docPassword: "jcode",
+  },
   // SEO 配置（用于注入 Head，提升 SEO 友好性）
   seo: {
     // 页面默认标题
