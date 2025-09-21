@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { Play, XIcon } from "lucide-react";
@@ -86,9 +86,15 @@ export function HeroVideoDialog({
   }, []);
 
   // 当缩略图地址变化时重置加载状态，避免保持隐藏
+  const imgRef = useRef<HTMLImageElement | null>(null);
   useEffect(() => {
     setImgLoaded(false);
     setImgError(false);
+    // 如果图片已从缓存完成加载，onLoad 可能不触发，这里同步设置为已加载
+    const el = imgRef.current;
+    if (el && el.complete && el.naturalWidth > 0) {
+      setImgLoaded(true);
+    }
   }, [thumbnailSrc]);
 
   // 弹层内容（通过 Portal 渲染到 body，避免被祖先 overflow/filter 限制）
@@ -159,11 +165,14 @@ export function HeroVideoDialog({
           {/* 缩略图：加载成功后显示，失败则保持隐藏 */}
           {thumbnailSrc ? (
             <img
+              ref={imgRef}
               src={thumbnailSrc}
               alt={thumbnailAlt}
               width={1920}
               height={1080}
               referrerPolicy="no-referrer"
+              decoding="async"
+              loading="lazy"
               onLoad={() => setImgLoaded(true)}
               onError={() => setImgError(true)}
               style={{ visibility: imgLoaded && !imgError ? "visible" : "hidden" }}
