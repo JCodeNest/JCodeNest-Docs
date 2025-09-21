@@ -239,7 +239,7 @@ export function BlogGrid() {
               ) : (
                 <DefaultCover title={post.title} />
               )}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg" />
+              <div className="absolute inset-0 bg-black/0 transition-colors rounded-lg" />
               <ExternalLink className="absolute top-2 right-2 h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
             </div>
           }
