@@ -20,6 +20,7 @@ import {
     Settings,
     PlayCircle,
     PencilRuler,
+    Regex,
     Signature
 } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -122,6 +123,14 @@ const appTools: AppTool[] = [
     icon: Signature,
     color: "text-teal-500",
     available: true
+  },
+  {
+    id: "regex-tester",
+    name: "正则工具",
+    description: "测试/生成/速查常见正则表达式",
+    icon: Regex,
+    color: "text-purple-500",
+    available: true
   }
 ]
 
@@ -169,6 +178,9 @@ export function AppToolsGrid() {
           break
         case "signature-designer":
           router.push("/tools/signature")
+          break
+        case "regex-tester":
+          router.push("/tools/regex-tester")
           break
         default:
           console.log(`Navigate to ${tool.id}`)
