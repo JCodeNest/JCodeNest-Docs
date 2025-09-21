@@ -176,7 +176,7 @@ export function AppToolsGrid() {
                 className="group cursor-pointer transition-all duration-200 hover:shadow-md border-border/50 bg-background/50 backdrop-blur-sm relative overflow-hidden"
                 onClick={() => handleToolClick(tool)}
               >
-                <CardContent className="p-3 flex flex-col items-center justify-center h-full text-center space-y-2">
+                <CardContent className="flex flex-col items-center justify-center h-full text-center space-y-2">
                   <div className={`p-2 rounded-lg bg-muted/50 group-hover:bg-muted transition-colors ${tool.color}`}>
                     <IconComponent className="w-6 h-6 sm:w-5 sm:h-5" />
                   </div>
