@@ -201,13 +201,13 @@ export default function ImageCompressor() {
     canvas.height = th
     const ctx = canvas.getContext("2d", { alpha: true })
     if (!ctx) throw new Error("Canvas not available")
-    ;(ctx as any).imageSmoothingEnabled = true
+    ctx.imageSmoothingEnabled = true
     if (sampling === "fast") {
-      ;(ctx as any).imageSmoothingQuality = "low"
+      ctx.imageSmoothingQuality = "low"
     } else if (sampling === "quality") {
-      ;(ctx as any).imageSmoothingQuality = "high"
+      ctx.imageSmoothingQuality = "high"
     } else {
-      ;(ctx as any).imageSmoothingQuality = "medium"
+      ctx.imageSmoothingQuality = "medium"
     }
 
     if (bg !== "transparent") {
@@ -237,8 +237,8 @@ export default function ImageCompressor() {
             : x
         )
       )
-    } catch (e: any) {
-      setItems((prev) => prev.map((x) => (x.id === it.id ? { ...x, status: "error", error: e?.message || "压缩失败" } : x)))
+    } catch (e: unknown) {
+      setItems((prev) => prev.map((x) => (x.id === it.id ? { ...x, status: "error", error: e instanceof Error ? e.message : "压缩失败" } : x)))
     }
   }
 
@@ -392,7 +392,7 @@ export default function ImageCompressor() {
               <div className="space-y-1.5">
                 <Label className="text-xs">背景（透明填充）</Label>
                 <div className="flex items-center gap-2">
-                  <Select value={bgMode} onValueChange={(v) => setBgMode(v as any)}>
+                  <Select value={bgMode} onValueChange={(v) => setBgMode(v as "transparent" | "white" | "black" | "custom")}>
                     <SelectTrigger className="w-36">
                       <SelectValue />
                     </SelectTrigger>

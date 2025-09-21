@@ -262,7 +262,7 @@ export default function TimestampConverter() {
             </Card>
           </div>
 
-          <Tabs value={tab} onValueChange={(v: any) => setTab(v)}>
+          <Tabs value={tab} onValueChange={(v) => setTab(v as "ts2dt" | "dt2ts")}>
             <TabsList className="grid grid-cols-2 w-full md:w-auto">
               <TabsTrigger value="ts2dt">时间戳 → 日期时间</TabsTrigger>
               <TabsTrigger value="dt2ts">日期时间 → 时间戳</TabsTrigger>

@@ -117,11 +117,11 @@ function toBaseString(n: number, base: number, fractionDigits: number, enableFra
 
   // integer part
   const intPart = Math.floor(abs)
-  let intStr = intPart.toString(base)
+  const intStr = intPart.toString(base)
 
   let fracStr = ""
   if (enableFraction) {
-    let frac = abs - intPart
+    const frac = abs - intPart
     if (frac > 0 && fractionDigits > 0) {
       let out = ""
       let cur = frac
@@ -336,7 +336,7 @@ export default function BaseConverter() {
             </Card>
           </div>
 
-          <Tabs value={tab} onValueChange={(v: any) => setTab(v)} className="mt-2">
+          <Tabs value={tab} onValueChange={(v) => setTab(v as "common" | "custom")} className="mt-2">
             <TabsList className="grid grid-cols-2 md:grid-cols-3 w-full md:w-auto">
               <TabsTrigger value="common">常用进制</TabsTrigger>
               <TabsTrigger value="custom">自定义输出</TabsTrigger>

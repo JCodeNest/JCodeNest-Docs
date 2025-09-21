@@ -131,7 +131,7 @@ export default function RegexTester() {
     const globalRe = new RegExp(pattern, f.includes("g") ? f : f + "g")
     let m: RegExpExecArray | null
     while ((m = globalRe.exec(testText)) !== null) {
-      out.push({ index: m.index, match: m[0], groups: (m as any).groups })
+      out.push({ index: m.index, match: m[0], groups: (m as RegExpExecArray & { groups?: Record<string, string> }).groups })
       if (!m[0]) {
         globalRe.lastIndex++
       }
@@ -159,7 +159,7 @@ export default function RegexTester() {
   }
 
   // 常见生成器（简化版）
-  const [genTab, setGenTab] = useState<"email" | "mobile" | "username" | "number">("email")
+  const [genTab, setGenTab] = useState<"email" | "mobile" | "username" | "number" | "url" | "date">("email")
   const [usernameLen, setUsernameLen] = useState(12)
   const generators = {
     email: () => "^[\\w.+-]+@[\\w.-]+\\.[A-Za-z]{2,}$",
@@ -323,7 +323,7 @@ export default function RegexTester() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Tabs value={genTab} onValueChange={(v: any) => setGenTab(v)}>
+                <Tabs value={genTab} onValueChange={(v) => setGenTab(v as "email" | "mobile" | "url" | "date")}>
                   <TabsList className="grid grid-cols-4">
                     <TabsTrigger value="email">邮箱</TabsTrigger>
                     <TabsTrigger value="mobile">手机号</TabsTrigger>

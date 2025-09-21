@@ -149,8 +149,8 @@ export default function OcrRecognizer() {
       const { data } = await worker.recognize(preUrl!)
       await worker.terminate()
       setItems(prev => prev.map(x => x.id === it.id ? { ...x, status: "done", text: data.text, progress: 100 } : x))
-    } catch (e: any) {
-      setItems(prev => prev.map(x => x.id === it.id ? { ...x, status: "error", error: e?.message || "识别失败" } : x))
+    } catch (e: unknown) {
+      setItems(prev => prev.map(x => x.id === it.id ? { ...x, status: "error", error: e instanceof Error ? e.message : "识别失败" } : x))
     } finally {
       if (preUrl) { try { URL.revokeObjectURL(preUrl) } catch {} }
     }
@@ -160,7 +160,7 @@ export default function OcrRecognizer() {
   const pending = useMemo(() => items.filter(i => i.status === "queue"), [items])
   React.useEffect(() => {
     if (!runningRef.current) return
-    let active = items.filter(i => i.status === "processing").length
+    const active = items.filter(i => i.status === "processing").length
     const slots = Math.max(1, concurrency) - active
     if (slots <= 0) return
     const next = items.filter(i => i.status === "queue").slice(0, slots)

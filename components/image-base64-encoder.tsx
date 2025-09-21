@@ -125,7 +125,7 @@ export default function ImageBase64Encoder() {
                     const el = document.createElement("input")
                     el.type = "file"
                     el.accept = "image/*"
-                    el.onchange = (ev: any) => handleFiles((ev.target as HTMLInputElement).files)
+                    el.onchange = (ev: Event) => handleFiles((ev.target as HTMLInputElement).files)
                     el.click()
                   }}
                 >
@@ -173,7 +173,7 @@ export default function ImageBase64Encoder() {
           <Separator />
 
           {/* 结果片段 */}
-          <Tabs value={tab} onValueChange={(v: any) => setTab(v)}>
+          <Tabs value={tab} onValueChange={(v) => setTab(v as "datauri" | "css" | "html")}>
             <TabsList className="grid grid-cols-3 w-full md:w-auto">
               <TabsTrigger value="datauri">Data URI</TabsTrigger>
               <TabsTrigger value="css">CSS</TabsTrigger>
@@ -193,7 +193,7 @@ export default function ImageBase64Encoder() {
 
             <TabsContent value="css" className="space-y-2 pt-3">
               <div className="flex items-center justify-between">
-                <div className="text-xs text-muted-foreground">background-image: url("data:...")</div>
+                <div className="text-xs text-muted-foreground">background-image: url(&quot;data:...&quot;)</div>
                 <Button size="sm" variant="outline" onClick={() => copy(cssSnippet)} disabled={!dataUrl}>
                   {copied ? <Check className="w-4 h-4 mr-1" /> : <Copy className="w-4 h-4 mr-1" />}
                   复制
@@ -204,7 +204,7 @@ export default function ImageBase64Encoder() {
 
             <TabsContent value="html" className="space-y-2 pt-3">
               <div className="flex items-center justify-between">
-                <div className="text-xs text-muted-foreground"><img src="data:..." /></div>
+                <div className="text-xs text-muted-foreground">&lt;img src=&quot;data:...&quot; /&gt;</div>
                 <Button size="sm" variant="outline" onClick={() => copy(htmlSnippet)} disabled={!dataUrl}>
                   {copied ? <Check className="w-4 h-4 mr-1" /> : <Copy className="w-4 h-4 mr-1" />}
                   复制

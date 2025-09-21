@@ -189,7 +189,7 @@ export default function HttpStatusCodes() {
                 className="w-full h-8 text-base"
               />
             </div>
-            <Tabs value={tab} onValueChange={(v)=>setTab(v as any)} className="w-auto flex-none md:ml-auto">
+            <Tabs value={tab} onValueChange={(v)=>setTab(v as "all" | "1" | "2" | "3" | "4" | "5")} className="w-auto flex-none md:ml-auto">
               <TabsList className="whitespace-nowrap">
                 <TabsTrigger value="all">全部</TabsTrigger>
                 <TabsTrigger value="1">1xx</TabsTrigger>
