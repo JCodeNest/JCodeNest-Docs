@@ -32,9 +32,11 @@ declare global {
     __MD_DEBUG?: boolean
   }
 }
-const __mdDebug = (...args: any[]) => {
-  if (typeof window !== "undefined" && (window as any).__MD_DEBUG) {
-    // eslint-disable-next-line no-console
+const __mdDebug = (...args: unknown[]): void => {
+  if (
+    typeof window !== "undefined" &&
+    (window as unknown as { __MD_DEBUG?: boolean }).__MD_DEBUG
+  ) {
     console.log("[MD-BQ]", ...args)
   }
 }
@@ -77,6 +79,140 @@ function transformAdmonitionsToBlockquote(src: string): string {
 
 /** 引用块嵌套深度上下文：根为 0，嵌套逐层 +1 */
 const QuoteDepthCtx = React.createContext(0)
+
+/**
+ * 生成 Blockquote 组件（支持 ::tip | ::warning | ::error | ::danger；支持嵌套轻量样式）
+ * 保留调试输出，类型安全
+ */
+function createBlockquote(variant: "default" | "compact" | "article" | "card" | undefined) {
+  const Blockquote: React.FC<React.HTMLAttributes<HTMLQuoteElement>> = ({ children, ...props }) => {
+    const depth = React.useContext(QuoteDepthCtx)
+    const nodes = React.Children.toArray(children)
+
+    // 从 ReactNode 提取纯文本
+    const getNodeText = (n: React.ReactNode): string => {
+      if (typeof n === "string") return n
+      if (Array.isArray(n)) return (n as React.ReactNode[]).map(getNodeText).join("")
+      if (React.isValidElement(n)) {
+        const el = n as React.ReactElement<{ children?: React.ReactNode }>
+        return getNodeText(el.props?.children)
+      }
+      return ""
+    }
+
+    // 找到第一个非空文本节点
+    let firstIndex = -1
+    for (let i = 0; i < nodes.length; i++) {
+      const t = getNodeText(nodes[i]).trim()
+      if (t.length > 0) { firstIndex = i; break }
+    }
+    const firstNode = firstIndex >= 0 ? nodes[firstIndex] : null
+    const firstText = firstNode ? getNodeText(firstNode).trim() : ""
+    const firstLine = firstText.split(/\r?\n/)[0]?.trim() ?? ""
+    __mdDebug("firstIndex", firstIndex, "firstLine", firstLine)
+
+    // 兼容：前导空白/中文空格、半角/全角冒号；支持 tip|warning|error|danger（danger=error）
+    const m = firstLine.match(/^[\s\u00A0\u3000]*[:：]{2}(tip|warning|error|danger)\b[ \t\u00A0\u3000]*([^\r\n]*)/i)
+    const rawType = (m ? (m[1] as string).toLowerCase() : "tip") as "tip" | "warning" | "error" | "danger"
+    const type: "tip" | "warning" | "error" = rawType === "danger" ? "error" : rawType
+    const title = m && m[2] && (m[2] as string).trim().length > 0
+      ? (m[2] as string).trim()
+      : (type === "warning" ? "注意" : type === "error" ? "错误" : "提示")
+
+    // 从首个节点中移除“首行”文本，保留其余 Markdown 结构
+    const removeFirstLineFromReactNode = (n: React.ReactNode): React.ReactNode => {
+      if (typeof n === "string") return n.replace(/^[^\r\n]*\r?\n?/, "")
+      if (Array.isArray(n)) return (n as React.ReactNode[]).map(removeFirstLineFromReactNode)
+      if (React.isValidElement(n)) {
+        const el = n as React.ReactElement<{ children?: React.ReactNode }>
+        return React.cloneElement(el, { ...el.props }, removeFirstLineFromReactNode(el.props?.children))
+      }
+      return n
+    }
+
+    const bodyChildren: React.ReactNode[] = m
+      ? [
+          ...nodes.slice(0, firstIndex),
+          firstNode && React.isValidElement(firstNode)
+            ? React.cloneElement(
+                firstNode as React.ReactElement<{ children?: React.ReactNode }>,
+                undefined,
+                removeFirstLineFromReactNode((firstNode as React.ReactElement<{ children?: React.ReactNode }>).props?.children)
+              )
+            : (typeof firstNode === "string" ? removeFirstLineFromReactNode(firstNode) : firstNode),
+          ...nodes.slice(firstIndex + 1),
+        ].filter(Boolean) as React.ReactNode[]
+      : (nodes as React.ReactNode[])
+
+    __mdDebug("match", m, "type", type, "title", title, "bodyLen", bodyChildren.length)
+
+    const clsByType = {
+      tip: {
+        box: "bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800",
+        title: "text-blue-700 dark:text-blue-400",
+        text: "text-blue-600 dark:text-blue-500",
+        icon: <Info className="w-4 h-4 text-blue-500 mt-0.5" />,
+      },
+      warning: {
+        box: "bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800",
+        title: "text-amber-700 dark:text-amber-400",
+        text: "text-amber-600 dark:text-amber-500",
+        icon: <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5" />,
+      },
+      error: {
+        box: "bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800",
+        title: "text-red-700 dark:text-red-400",
+        text: "text-red-600 dark:text-red-500",
+        icon: <AlertOctagon className="w-4 h-4 text-red-500 mt-0.5" />,
+      },
+    } as const
+
+    const isDirective = !!m
+    const isNested = depth > 0
+
+    // 嵌套且无指令：轻量样式
+    const nestedBox = "bg-blue-50/40 dark:bg-blue-950/10 border border-blue-200/60 dark:border-blue-800/50"
+    const nestedTitle = "text-blue-700/90 dark:text-blue-300/90"
+    const nestedText = "text-blue-700/80 dark:text-blue-400/80"
+
+    const cur = isDirective || !isNested
+      ? clsByType[type]
+      : { box: nestedBox, title: nestedTitle, text: nestedText, icon: <Info className="w-4 h-4 text-blue-500 mt-0.5" /> }
+
+    const containerClasses = cn(
+      "my-6 rounded-lg p-3",
+      cur.box,
+      variant === "article" && "my-8 p-4",
+      isNested && "my-4 p-3"
+    )
+
+    return (
+      <QuoteDepthCtx.Provider value={depth + 1}>
+        <blockquote className={containerClasses} {...props}>
+          <div className="flex items-start gap-2">
+            {cur.icon}
+            <div>
+              <p className={cn("text-sm font-medium", cur.title)}>{title}</p>
+              <div
+                className={cn(
+                  "mt-1 text-[0.95rem] leading-6",
+                  "[&_p]:my-2 [&_ul]:my-2 [&_ol]:my-2 [&_li]:mt-1",
+                  "[&_pre]:my-3 [&_pre]:!text-[13px] [&_code]:!text-[13px]",
+                  "[&_table]:my-3 [&_table]:w-full",
+                  variant === "article" && "text-[1rem] leading-7",
+                  cur.text
+                )}
+              >
+                {bodyChildren.length > 0 ? bodyChildren : null}
+              </div>
+            </div>
+          </div>
+        </blockquote>
+      </QuoteDepthCtx.Provider>
+    )
+  }
+  return Blockquote
+}
 
 export interface MarkdownProps {
   children: string
@@ -324,140 +460,8 @@ const createDefaultComponents = (variant: MarkdownProps["variant"]): Partial<Com
     </li>
   ),
 
-  // 引用块（支持 ::tip | ::warning | ::error | ::danger，默认 tip）
-  blockquote: ({ children, ...props }) => {
-    const depth = React.useContext(QuoteDepthCtx)
-    const nodes = React.Children.toArray(children)
-    const first = nodes[0] as any
-    // 提取首段纯文本
-    const getNodeText = (n: any): string => {
-      if (typeof n === "string") return n
-      if (Array.isArray(n)) return n.map(getNodeText).join("")
-      if (React.isValidElement(n)) {
-        const el = n as React.ReactElement<any>
-        return getNodeText((el.props as any)?.children)
-      }
-      return ""
-    }
-    // 找到第一个非空文本节点作为候选首行
-    let firstIndex = -1
-    for (let i = 0; i < nodes.length; i++) {
-      const t = getNodeText(nodes[i]).trim()
-      if (t.length > 0) { firstIndex = i; break }
-    }
-    const firstNode = firstIndex >= 0 ? nodes[firstIndex] : null
-    const firstText = firstNode ? getNodeText(firstNode).trim() : ""
-    // 仅取“首行”匹配（避免包含正文导致整段匹配失败）
-    const firstLine = firstText.split(/\r?\n/)[0]?.trim() ?? ""
-    __mdDebug("firstIndex", firstIndex, "firstLine", firstLine)
-
-    // 兼容：前导空白/中文空格、半角/全角冒号；支持 tip|warning|error|danger（danger 视为 error）
-    const m = firstLine.match(/^[\s\u00A0\u3000]*[:：]{2}(tip|warning|error|danger)\b[ \t\u00A0\u3000]*([^\r\n]*)/i)
-    const rawType = (m ? (m[1] as string).toLowerCase() : "tip") as "tip" | "warning" | "error" | "danger"
-    const type = (rawType === "danger" ? "error" : rawType) as "tip" | "warning" | "error"
-    const title = (m && m[2] && (m[2] as string).trim().length > 0)
-      ? (m[2] as string).trim()
-      : (type === "warning" ? "注意" : type === "error" ? "错误" : "提示")
-
-    // 从首个节点中移除“首行”文本，保留其余 Markdown 结构
-    const removeFirstLineFromReactNode = (n: any): any => {
-      if (typeof n === "string") return n.replace(/^[^\r\n]*\r?\n?/, "")
-      if (Array.isArray(n)) return n.map(removeFirstLineFromReactNode)
-      if (React.isValidElement(n)) {
-        const el = n as React.ReactElement<any>
-        return React.cloneElement(
-          el,
-          { ...el.props },
-          removeFirstLineFromReactNode((el.props as any)?.children)
-        )
-      }
-      return n
-    }
-
-    // 命中则替换首节点为“去掉首行”的版本；未命中保持原 nodes
-    const bodyChildren = m
-      ? [
-          ...nodes.slice(0, firstIndex),
-          firstNode && React.isValidElement(firstNode)
-            ? React.cloneElement(
-                firstNode as any,
-                { ...(firstNode as any).props },
-                removeFirstLineFromReactNode((firstNode as any).props?.children)
-              )
-            : (typeof firstNode === "string" ? removeFirstLineFromReactNode(firstNode) : firstNode),
-          ...nodes.slice(firstIndex + 1),
-        ].filter(Boolean)
-      : nodes
-
-    __mdDebug("match", m, "type", type, "title", title, "bodyLen", bodyChildren.length)
-
-    const clsByType = {
-      tip: {
-        box: "bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800",
-        title: "text-blue-700 dark:text-blue-400",
-        text: "text-blue-600 dark:text-blue-500",
-        icon: <Info className="w-4 h-4 text-blue-500 mt-0.5" />,
-      },
-      warning: {
-        box: "bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800",
-        title: "text-amber-700 dark:text-amber-400",
-        text: "text-amber-600 dark:text-amber-500",
-        icon: <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5" />,
-      },
-      error: {
-        box: "bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800",
-        title: "text-red-700 dark:text-red-400",
-        text: "text-red-600 dark:text-red-500",
-        icon: <AlertOctagon className="w-4 h-4 text-red-500 mt-0.5" />,
-      },
-    } as const
-
-    const isDirective = !!m
-    const isNested = depth > 0
-
-    // 嵌套且无指令：使用轻量样式（更淡背景/边框、更紧凑留白）
-    const nestedBox = "bg-blue-50/40 dark:bg-blue-950/10 border border-blue-200/60 dark:border-blue-800/50"
-    const nestedTitle = "text-blue-700/90 dark:text-blue-300/90"
-    const nestedText = "text-blue-700/80 dark:text-blue-400/80"
-
-    const cur = isDirective || !isNested
-      ? clsByType[type]
-      : { box: nestedBox, title: nestedTitle, text: nestedText, icon: <Info className="w-4 h-4 text-blue-500 mt-0.5" /> }
-
-    const containerClasses = cn(
-      "my-6 rounded-lg p-3",
-      cur.box,
-      variant === "article" && "my-8 p-4",
-      isNested && "my-4 p-3"
-    )
-
-    return (
-      <QuoteDepthCtx.Provider value={depth + 1}>
-        <blockquote className={containerClasses} {...props}>
-        <div className="flex items-start gap-2">
-          {cur.icon}
-          <div>
-            <p className={cn("text-sm font-medium", cur.title)}>{title}</p>
-            <div className={cn(
-              "mt-1 text-[0.95rem] leading-6",
-              // 段落与列表间距
-              "[&_p]:my-2 [&_ul]:my-2 [&_ol]:my-2 [&_li]:mt-1",
-              // 代码块与行内代码可读性与间距
-              "[&_pre]:my-3 [&_pre]:!text-[13px] [&_code]:!text-[13px]",
-              // 表格占满卡片内部宽度并留足空间
-              "[&_table]:my-3 [&_table]:w-full",
-              // 文章模式再稍大一点
-              variant === "article" && "text-[1rem] leading-7",
-              cur.text
-            )}>
-              {bodyChildren.length > 0 ? bodyChildren : null}
-            </div>
-          </div>
-        </div>
-        </blockquote>
-      </QuoteDepthCtx.Provider>
-    )
-  },
+  // 引用块（支持 ::tip | ::warning | ::error | ::danger，默认 tip；嵌套无指令时使用轻量样式）
+  blockquote: createBlockquote(variant),
 
   // 代码 - 分离行内和块级处理
   code: ({ children, className, inline }: {children?: React.ReactNode, className?: string, inline?: boolean}) => {
