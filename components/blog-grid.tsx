@@ -1,23 +1,23 @@
 "use client"
 
-import { cn } from "@/lib/utils";
-import React, { useState, useEffect } from "react";
-import { BentoGrid, BentoGridItem } from "@/components/ui/bento-grid";
-import { useSidebar } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { BentoGrid, BentoGridItem } from "@/components/ui/bento-grid";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useDebounce } from 'use-debounce';
+import { useSidebar } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 import {
-  RefreshCw,
-  Search,
-  Calendar,
-  Clock,
-  FileText,
-  ExternalLink,
-  BookOpen
+    BookOpen,
+    Calendar,
+    Clock,
+    ExternalLink,
+    FileText,
+    RefreshCw,
+    Search
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useDebounce } from 'use-debounce';
 
 interface BlogPost {
   title: string;
@@ -232,7 +232,7 @@ export function BlogGrid() {
                 <img
                   src={post.cover}
                   alt={post.title}
-                  className="w-full h-32 object-cover rounded-lg transition-transform group-hover:scale-105"
+                  className="w-full h-35 object-fill rounded-lg transition-transform group-hover:scale-105"
                 />
               ) : (
                 <DefaultCover title={post.title} />
