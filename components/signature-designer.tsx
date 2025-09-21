@@ -140,8 +140,8 @@ export function SignatureDesigner() {
           <CardTitle>在线电子签名</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-12 items-end gap-4">
-            <div className="space-y-2 md:col-span-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
               <Label>画笔颜色</Label>
               <div className="flex items-center gap-2">
                 <Input
@@ -157,7 +157,7 @@ export function SignatureDesigner() {
                 />
               </div>
             </div>
-            <div className="space-y-2 md:col-span-5">
+            <div className="space-y-2">
               <Label>笔画粗细：{thickness}px</Label>
               <Slider
                 className="w-full touch-none select-none"
@@ -168,7 +168,7 @@ export function SignatureDesigner() {
                 step={0.5}
               />
             </div>
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2">
               <Label>背景</Label>
               <div className="inline-flex items-center rounded-md border p-0.5 bg-muted/40 gap-0">
                 <Button
