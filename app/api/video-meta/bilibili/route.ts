@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
 
-export const revalidate = 60 * 60; // 1h 缓存
 
 export async function GET(req: NextRequest) {
   try {
@@ -22,7 +21,7 @@ export async function GET(req: NextRequest) {
 
     const res = await fetch(api, {
       // 使用 Next 内置缓存，配合 revalidate
-      next: { revalidate },
+      next: { revalidate: 3600 },
       headers: {
         // 设定 UA 提高成功率（可选）
         "user-agent":

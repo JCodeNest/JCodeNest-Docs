@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sidebar"
 import SiteNavigator from "@/components/site-navigator"
 
-export const dynamic = "force-dynamic"
+
 
 export default function Page() {
   return (
