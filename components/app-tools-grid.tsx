@@ -19,7 +19,8 @@ import {
     QrCode,
     Settings,
     PlayCircle,
-    PencilRuler
+    PencilRuler,
+    Signature
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -113,6 +114,14 @@ const appTools: AppTool[] = [
     icon: PencilRuler,
     color: "text-emerald-500",
     available: true
+  },
+  {
+    id: "signature-designer",
+    name: "电子签名",
+    description: "在线手写签名（导出 PNG/SVG）",
+    icon: Signature,
+    color: "text-teal-500",
+    available: true
   }
 ]
 
@@ -157,6 +166,9 @@ export function AppToolsGrid() {
           break
         case "excalidraw":
           router.push("/tools/excalidraw")
+          break
+        case "signature-designer":
+          router.push("/tools/signature")
           break
         default:
           console.log(`Navigate to ${tool.id}`)
