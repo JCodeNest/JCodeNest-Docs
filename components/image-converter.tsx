@@ -617,7 +617,7 @@ export function ImageConverter() {
           </Button>
         </div>
         
-        <Badge variant="secondary" className="font-mono">
+        <Badge variant="secondary" className="font-mono hidden md:inline-flex">
           {images.length} 张图片
         </Badge>
       </div>
