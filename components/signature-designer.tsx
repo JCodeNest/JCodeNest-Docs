@@ -198,15 +198,19 @@ export function SignatureDesigner() {
             />
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={handleUndo}>
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+            <Button variant="outline" onClick={handleUndo} size="sm" className="sm:size-default">
               撤销
             </Button>
-            <Button variant="outline" onClick={handleClear}>
+            <Button variant="outline" onClick={handleClear} size="sm" className="sm:size-default">
               清空
             </Button>
-            <Button onClick={exportPNG}>导出 PNG</Button>
-            <Button onClick={exportSVG}>导出 SVG</Button>
+            <Button onClick={exportPNG} size="sm" className="sm:size-default">
+              导出 PNG
+            </Button>
+            <Button onClick={exportSVG} size="sm" className="sm:size-default">
+              导出 SVG
+            </Button>
           </div>
         </CardContent>
       </Card>
