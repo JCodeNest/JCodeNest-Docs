@@ -1,31 +1,26 @@
 "use client"
 
-import { useState, useCallback, useEffect, useRef } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Slider } from "@/components/ui/slider"
-import { 
-  QrCode,
-  Download,
-  Copy,
-  CheckCircle,
-  Smartphone,
-  Wifi,
-  Mail,
-  Phone,
-  MapPin,
-  Globe,
-  User,
-  CreditCard,
-  Calendar,
-  Palette
-} from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
+import {
+    CheckCircle,
+    Copy,
+    Download,
+    Globe,
+    Mail,
+    MapPin,
+    Phone,
+    QrCode,
+    User,
+    Wifi
+} from "lucide-react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 // 真正的二维码生成函数
 const generateQRCode = (text: string, options: QROptions): string => {
@@ -408,9 +403,9 @@ export function QRGenerator() {
           </Button>
         </div>
         
-        <Badge variant="secondary" className="font-mono">
-          {qrOptions.width}×{qrOptions.width}px
-        </Badge>
+        <Badge variant="secondary" className="font-mono hidden md:inline-flex">
+           {qrOptions.width}×{qrOptions.width}px
+         </Badge>
       </div>
 
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4">
