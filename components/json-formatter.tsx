@@ -1,25 +1,20 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { 
-  FileJson, 
-  Copy, 
-  Download, 
-  Upload, 
-  Minimize2, 
-  Maximize2, 
-  RotateCcw,
-  CheckCircle,
-  AlertCircle,
-  TestTube
-} from "lucide-react"
-import { cn } from "@/lib/utils"
 import { JsonDisplay } from "@/components/json-display"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Textarea } from "@/components/ui/textarea"
+import {
+    AlertCircle,
+    CheckCircle,
+    Copy,
+    Maximize2,
+    Minimize2,
+    RotateCcw,
+    TestTube
+} from "lucide-react"
+import { useCallback, useState } from "react"
 
 interface JsonError {
   message: string
@@ -60,6 +55,8 @@ export function JsonFormatter() {
   const [error, setError] = useState<JsonError | null>(null)
   const [isValid, setIsValid] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
+  // 新增：视图模式（pretty | compressed）
+  const [viewMode, setViewMode] = useState<'pretty' | 'compressed'>('pretty')
 
   const validateAndFormat = useCallback((jsonString: string) => {
     if (!jsonString.trim()) {
@@ -75,6 +72,8 @@ export function JsonFormatter() {
       setFormattedJson(formatted)
       setError(null)
       setIsValid(true)
+      // 保持为格式化视图
+      setViewMode('pretty')
     } catch (err) {
       setFormattedJson("")
       setIsValid(false)
@@ -121,6 +120,8 @@ export function JsonFormatter() {
         const parsed = JSON.parse(formattedJson)
         const compressed = JSON.stringify(parsed)
         setFormattedJson(compressed)
+        // 切换为压缩视图（原样显示一行）
+        setViewMode('compressed')
       } catch (err) {
         console.error("压缩失败:", err)
       }
@@ -129,12 +130,36 @@ export function JsonFormatter() {
 
   const handleCopy = async () => {
     if (formattedJson) {
+      // 先尝试现代剪贴板 API
       try {
-        await navigator.clipboard.writeText(formattedJson)
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(formattedJson)
+        } else {
+          throw new Error('Clipboard API 不可用')
+        }
         setCopySuccess(true)
         setTimeout(() => setCopySuccess(false), 2000)
+        return
       } catch (err) {
-        console.error("复制失败:", err)
+        // 回退方案：使用隐藏 textarea + execCommand
+        try {
+          const textarea = document.createElement('textarea')
+          textarea.value = formattedJson
+          textarea.setAttribute('readonly', '')
+          textarea.style.position = 'fixed'
+          textarea.style.left = '-9999px'
+          document.body.appendChild(textarea)
+          textarea.select()
+          const ok = document.execCommand('copy')
+          document.body.removeChild(textarea)
+          if (ok) {
+            setCopySuccess(true)
+            setTimeout(() => setCopySuccess(false), 2000)
+            return
+          }
+        } catch (fallbackErr) {
+          console.error("复制失败:", fallbackErr)
+        }
       }
     }
   }
@@ -144,6 +169,7 @@ export function JsonFormatter() {
     setFormattedJson("")
     setError(null)
     setIsValid(false)
+    setViewMode('pretty')
   }
 
   const handleLoadSample = () => {
@@ -152,22 +178,20 @@ export function JsonFormatter() {
     validateAndFormat(sampleString)
   }
 
-
-
   return (
-    <div className="w-full h-full flex flex-col gap-4">
+    <div className="w-full h-full flex flex-col gap-3 md:gap-4">
       {/* 操作按钮 */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-2">
-        <Button onClick={handleFormat} disabled={!inputJson.trim()}>
+      <div className="flex items-center justify-between gap-2 md:flex-wrap min-w-0">
+        <div className="flex flex-nowrap gap-1.5 overflow-x-auto md:overflow-visible md:flex-wrap md:gap-2">
+        <Button size="sm" className="md:h-9 md:px-4 md:has-[>svg]:px-3" onClick={handleFormat} disabled={!inputJson.trim()}>
           <Maximize2 className="w-4 h-4 mr-2" />
           格式化
         </Button>
-        <Button onClick={handleCompress} disabled={!isValid} variant="outline">
+        <Button size="sm" className="md:h-9 md:px-4 md:has-[>svg]:px-3" onClick={handleCompress} disabled={!isValid} variant="outline">
           <Minimize2 className="w-4 h-4 mr-2" />
           压缩
         </Button>
-        <Button onClick={handleCopy} disabled={!formattedJson} variant="outline">
+        <Button size="sm" className="md:h-9 md:px-4 md:has-[>svg]:px-3" onClick={handleCopy} disabled={!formattedJson} variant="outline">
           {copySuccess ? (
             <CheckCircle className="w-4 h-4 mr-2" />
           ) : (
@@ -175,11 +199,11 @@ export function JsonFormatter() {
           )}
           {copySuccess ? "已复制" : "复制"}
         </Button>
-        <Button onClick={handleClear} variant="outline">
+        <Button size="sm" className="md:h-9 md:px-4 md:has-[>svg]:px-3" onClick={handleClear} variant="outline">
           <RotateCcw className="w-4 h-4 mr-2" />
           清空
         </Button>
-          <Button onClick={handleLoadSample} variant="outline">
+          <Button size="sm" className="md:h-9 md:px-4 md:has-[>svg]:px-3" onClick={handleLoadSample} variant="outline">
             <TestTube className="w-4 h-4 mr-2" />
             测试数据
           </Button>
@@ -202,13 +226,13 @@ export function JsonFormatter() {
       </div>
 
       {/* 主要内容区域 */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 min-h-0">
         {/* 输入区域 */}
-        <Card className="flex flex-col">
-          <CardHeader className="pb-3">
+        <Card className="flex flex-col p-2 md:p-4">
+          <CardHeader className="px-3 md:px-6 pb-2 md:pb-3">
             <CardTitle className="text-sm font-medium">输入 JSON</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 p-3">
+          <CardContent className="flex-1 p-2 md:p-3">
             <Textarea
               value={inputJson}
               onChange={(e) => handleInputChange(e.target.value)}
@@ -219,11 +243,11 @@ export function JsonFormatter() {
         </Card>
 
         {/* 输出区域 */}
-        <Card className="flex flex-col">
-          <CardHeader className="pb-3">
+        <Card className="flex flex-col p-2 md:p-4">
+          <CardHeader className="px-3 md:px-6 pb-2 md:pb-3">
             <CardTitle className="text-sm font-medium">格式化结果</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 p-3">
+          <CardContent className="flex-1 p-2 md:p-3">
             {error ? (
               <div className="w-full h-full bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-md p-4">
                 <div className="flex items-start gap-2">
@@ -244,11 +268,19 @@ export function JsonFormatter() {
                 </div>
               </div>
             ) : (
-              <JsonDisplay 
-                jsonString={formattedJson} 
-                showLineNumbers={true}
-                className="w-full h-full"
-              />
+              <>
+                {viewMode === 'pretty' ? (
+                  <JsonDisplay 
+                    jsonString={formattedJson} 
+                    showLineNumbers={false}
+                    className="w-full h-full"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-muted/30 rounded-md overflow-auto">
+                    <pre className="w-full h-full p-4 font-mono text-sm whitespace-pre">{formattedJson}</pre>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
