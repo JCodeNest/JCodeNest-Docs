@@ -7,7 +7,7 @@ import { MarkdownImage } from "@/components/ui/image-preview"
 import { MermaidCodeBlock } from "@/components/ui/mermaid"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
-import { Check, Copy, ExternalLink, Info, AlertTriangle, AlertOctagon } from "lucide-react"
+import { Check, Copy, ExternalLink } from "lucide-react"
 import { useTheme } from "next-themes"
 import * as React from "react"
 import type { Components } from "react-markdown"
@@ -149,21 +149,12 @@ function createBlockquote(variant: "default" | "compact" | "article" | "card" | 
     const clsByType = {
       tip: {
         box: "bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800",
-        title: "text-blue-700 dark:text-blue-400",
-        text: "text-blue-600 dark:text-blue-500",
-        icon: <Info className="w-10 h-10 text-blue-500 -mt-2" />,
       },
       warning: {
         box: "bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800",
-        title: "text-amber-700 dark:text-amber-400",
-        text: "text-amber-600 dark:text-amber-500",
-        icon: <AlertTriangle className="w-10 h-10 text-amber-500 -mt-2" />,
       },
       error: {
         box: "bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800",
-        title: "text-red-700 dark:text-red-400",
-        text: "text-red-600 dark:text-red-500",
-        icon: <AlertOctagon className="w-10 h-10 text-red-500 -mt-2" />,
       },
     } as const
 
@@ -172,12 +163,11 @@ function createBlockquote(variant: "default" | "compact" | "article" | "card" | 
 
     // 嵌套且无指令：轻量样式
     const nestedBox = "bg-blue-50/40 dark:bg-blue-950/10 border border-blue-200/60 dark:border-blue-800/50"
-    const nestedTitle = "text-blue-700/90 dark:text-blue-300/90"
-    const nestedText = "text-blue-700/80 dark:text-blue-400/80"
+
 
     const cur = isDirective || !isNested
       ? clsByType[type]
-      : { box: nestedBox, title: nestedTitle, text: nestedText, icon: <Info className="w-10 h-10 text-blue-500 -mt-0.5" /> }
+      : { box: nestedBox }
 
     const containerClasses = cn(
       "my-6 rounded-lg p-3",
@@ -189,22 +179,16 @@ function createBlockquote(variant: "default" | "compact" | "article" | "card" | 
     return (
       <QuoteDepthCtx.Provider value={depth + 1}>
         <blockquote className={containerClasses} {...props}>
-          <div className="flex items-start gap-2">
-            {cur.icon}
-            <div>
-              <p className={cn("text-base font-medium", cur.title)}>{title}</p>
-              <div
-                className={cn(
-                  "mt-1 text-[0.95rem] leading-6",
-                  "[&_p]:my-2 [&_ul]:my-2 [&_ol]:my-2 [&_li]:mt-1",
-                  "[&_pre]:my-3 [&_pre]:!text-[13px] [&_code]:!text-[13px]",
-                  "[&_table]:my-3 [&_table]:w-full",
-                  variant === "article" && "text-[1rem] leading-7"
-                )}
-              >
-                {bodyChildren.length > 0 ? bodyChildren : null}
-              </div>
-            </div>
+          <div
+            className={cn(
+              "text-[0.95rem] leading-6",
+              "[&_p]:my-2 [&_ul]:my-2 [&_ol]:my-2 [&_li]:mt-1",
+              "[&_pre]:my-3 [&_pre]:!text-[13px] [&_code]:!text-[13px]",
+              "[&_table]:my-3 [&_table]:w-full",
+              variant === "article" && "text-[1rem] leading-7"
+            )}
+          >
+            {bodyChildren.length > 0 ? bodyChildren : null}
           </div>
         </blockquote>
       </QuoteDepthCtx.Provider>
