@@ -14,6 +14,8 @@ import {
   PieChart,
   Settings2,
   SquareTerminal,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 
 import { SearchForm } from "@/components/search-form"
@@ -28,6 +30,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { siteConfig } from "@/config/site"
 
@@ -67,6 +71,7 @@ type NavNode = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [navData, setNavData] = React.useState<NavNode[]>([])
   const [loading, setLoading] = React.useState(true)
+  const { toggleSidebar, state } = useSidebar()
   
   React.useEffect(() => {
     // 在客户端加载内容目录结构
@@ -94,7 +99,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   
   return (
     <Sidebar variant="inset" {...props}>
-      <SidebarHeader className="border rounded-lg">
+      <div className="flex h-full flex-col rounded-xl border bg-white shadow-sm">
+      <SidebarHeader className="px-2 py-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
@@ -119,7 +125,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SearchForm/>
-      <SidebarContent>
+      <SidebarContent className="px-2">
         {loading ? (
           <div className="p-4 text-sm text-muted-foreground">加载中...</div>
         ) : (
@@ -130,6 +136,70 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarFooter>
         <NavUser user={staticData.user} />
       </SidebarFooter>
+      </div>
+      <SidebarRail />
+      
+      {/* 自定义侧边栏切换按钮 - 精致融合设计 */}
+      <div
+        className={`absolute top-1/2 -translate-y-1/2 transition-all duration-300 ease-in-out hidden md:block ${
+          state === "expanded" ? "right-0" : "-right-5"
+        }`}
+      >
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          title={state === "expanded" ? "收起侧边栏" : "展开侧边栏"}
+          className={`group relative transition-all duration-200 flex items-center justify-center overflow-hidden ${
+            state === "expanded" 
+              ? "h-10 w-5 bg-white/95 backdrop-blur-sm" 
+              : "h-12 w-7 bg-white border border-border/30 shadow-md rounded-r-lg"
+          }`}
+        >
+          {/* 展开状态：极简融合设计 */}
+          {state === "expanded" && (
+            <>
+              {/* 主体形状 - 使用 clip-path 创建完美的融合效果 */}
+              <div 
+                className="absolute inset-0 bg-white border-r border-border/20"
+                style={{
+                  clipPath: 'polygon(0% 20%, 100% 0%, 100% 100%, 0% 80%)',
+                }}
+              />
+              {/* 柔和的内阴影效果 */}
+              <div 
+                className="absolute inset-0 bg-gradient-to-r from-gray-50/30 to-transparent opacity-60"
+                style={{
+                  clipPath: 'polygon(0% 20%, 100% 0%, 100% 100%, 0% 80%)',
+                }}
+              />
+            </>
+          )}
+          
+          {/* 悬停效果 */}
+          <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${
+            state === "expanded" 
+              ? "bg-blue-50/40" 
+              : "bg-gray-50/60 rounded-r-lg"
+          }`} 
+          style={state === "expanded" ? {
+            clipPath: 'polygon(0% 20%, 100% 0%, 100% 100%, 0% 80%)',
+          } : {}} />
+          
+          {/* 图标 */}
+          <div className="relative z-10 flex items-center justify-center">
+            {state === "expanded" ? (
+              <ChevronLeft className="h-3.5 w-3.5 text-gray-500 group-hover:text-blue-600 transition-colors duration-200" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-gray-600 group-hover:text-gray-800 transition-colors duration-200" />
+            )}
+          </div>
+          
+          {/* 展开状态的微妙指示器 */}
+          {state === "expanded" && (
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-blue-200/60 rounded-r-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+          )}
+        </button>
+      </div>
     </Sidebar>
   )
 }

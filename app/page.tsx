@@ -20,7 +20,11 @@ import {
 
 export default function Home() {
   return (
-    <SidebarProvider>
+    <SidebarProvider 
+      style={{
+        "--sidebar-width": "20rem",
+      } as React.CSSProperties}
+    >
       <AppSidebar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2">
