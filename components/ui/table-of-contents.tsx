@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ChevronRight, List, Eye, EyeOff } from "lucide-react"
+import { ChevronRight, List, ChevronLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
@@ -21,10 +21,9 @@ interface TableOfContentsProps {
 export function TableOfContents({ content, className }: TableOfContentsProps) {
   const [tocItems, setTocItems] = React.useState<TocItem[]>([])
   const [activeId, setActiveId] = React.useState<string>("")
-  const [isVisible, setIsVisible] = React.useState(false)
-  const [isExpanded, setIsExpanded] = React.useState(false)
   const [scrollProgress, setScrollProgress] = React.useState(0)
   const [mobileOpen, setMobileOpen] = React.useState(false)
+  const [desktopOpen, setDesktopOpen] = React.useState(false)
 
   const slugify = React.useCallback((t: string) =>
     t
@@ -94,6 +93,25 @@ export function TableOfContents({ content, className }: TableOfContentsProps) {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [slugify])
 
+  // 桌面端打开目录时让正文为侧栏腾出空间（并排布局）
+  React.useEffect(() => {
+    const width = 320 // 侧栏宽度(px)
+    const gap = 0    // 与正文的间距(px)
+    const apply = () => {
+      if (desktopOpen && window.innerWidth >= 768) {
+        document.body.style.paddingRight = width + gap + "px"
+      } else {
+        document.body.style.paddingRight = ""
+      }
+    }
+    apply()
+    window.addEventListener("resize", apply)
+    return () => {
+      window.removeEventListener("resize", apply)
+      document.body.style.paddingRight = ""
+    }
+  }, [desktopOpen])
+
   // 平滑滚动到指定标题
   const scrollToHeading = (id: string) => {
     const element = document.getElementById(id) || 
@@ -111,145 +129,96 @@ export function TableOfContents({ content, className }: TableOfContentsProps) {
 
   return (
     <>
-      <div className={cn("fixed right-8 top-24 z-50 hidden md:block", className)}>
-      {/* 悬浮触发区域 - 扩大悬停区域 */}
-      <div
-        className="relative"
-        onMouseEnter={() => setIsVisible(true)}
-        onMouseLeave={() => {
-          // 延迟隐藏，给用户时间移动到目录面板
-          setTimeout(() => {
-            if (!isExpanded) {
-              setIsVisible(false)
-            }
-          }, 200)
-        }}
-      >
-        {/* 触发按钮 */}
-        <Button
-          variant={isVisible || isExpanded ? "default" : "outline"}
-          size="icon"
-          className={cn(
-            "h-12 w-12 rounded-full shadow-lg transition-all duration-300",
-            "bg-background/90 backdrop-blur-sm border-border/50",
-            "hover:bg-primary hover:text-primary-foreground hover:scale-110",
-            (isVisible || isExpanded) && "bg-primary text-primary-foreground scale-110"
-          )}
-          onClick={() => setIsExpanded(!isExpanded)}
+      {/* 桌面端右侧并排侧栏目录（无蒙层） */}
+      <div className={cn("hidden md:block", className)}>
+        {/* 右壁中部触发器：简约竖向标签 */}
+        <button
+          type="button"
+          onClick={() => setDesktopOpen((v) => !v)}
           title="文章目录"
+          className={cn(
+            "fixed right-0 top-1/2 -translate-y-1/2 z-40",
+            "h-24 w-8 rounded-l-md rounded-r-none",
+            "bg-background/95 text-foreground border border-border/60 shadow-md",
+            "flex items-center justify-center"
+          )}
         >
-          <List className="h-5 w-5" />
-        </Button>
+          <ChevronLeft className={cn("h-4 w-4 transition-transform", desktopOpen ? "-rotate-180" : "")} />
+        </button>
 
-        {/* 目录面板 - 修复高度和布局 */}
+        {/* 右侧固定侧栏：展开时占位并与正文并排 */}
         <div
           className={cn(
-            "absolute right-16 top-0 w-80 transition-all duration-300 origin-top-right",
-            "bg-background/95 backdrop-blur-md border border-border/50 rounded-lg shadow-xl",
-            "max-h-[70vh] flex flex-col", // 限制最大高度为70%视口高度
-            isVisible || isExpanded 
-              ? "opacity-100 scale-100 translate-x-0" 
-              : "opacity-0 scale-95 translate-x-4 pointer-events-none"
+            "fixed right-0 top-0 bottom-0 z-30",
+            "w-[320px] border-l bg-background",
+            "transition-transform duration-300",
+            desktopOpen ? "translate-x-0" : "translate-x-full"
           )}
-          onMouseEnter={() => setIsVisible(true)}
-          onMouseLeave={() => {
-            // 延迟隐藏，给用户时间操作
-            setTimeout(() => {
-              if (!isExpanded) {
-                setIsVisible(false)
-              }
-            }, 300)
-          }}
+          role="complementary"
+          aria-label="文章目录侧栏"
         >
-          {/* 头部 */}
-          <div className="flex items-center justify-between p-4 border-b border-border/50 shrink-0">
-            <h3 className="text-sm font-semibold text-foreground">文章目录</h3>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={() => setIsExpanded(!isExpanded)}
-                title={isExpanded ? "收起目录" : "固定展开"}
-              >
-                {isExpanded ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-              </Button>
+          <div className="h-full flex flex-col">
+            <div className="px-4 py-3 border-b">
+              <h3 className="text-sm font-semibold text-foreground">文章目录</h3>
             </div>
-          </div>
 
-          {/* 目录内容 - 修复滚动问题和滚动条 */}
-          <div className="flex-1 overflow-hidden min-h-0">
-            <div 
-              className="h-full overflow-y-auto scrollbar-thin"
-              style={{
-                maxHeight: 'calc(70vh - 8rem)', // 确保高度限制
-                scrollbarWidth: 'thin',
-                scrollbarColor: 'hsl(var(--muted-foreground) / 0.3) transparent'
-              }}
-              onWheel={(e) => {
-                // 阻止事件冒泡，确保滚动只作用于目录区域
-                e.stopPropagation()
-              }}
-            >
-              <div className="p-2 space-y-1">
-                {tocItems.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => scrollToHeading(item.id)}
+            <div className="px-3 pb-4 flex-1 min-h-0 overflow-y-auto">
+              {tocItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setDesktopOpen(false)
+                    setTimeout(() => scrollToHeading(item.id), 60)
+                  }}
+                  className={cn(
+                    "w-full text-left p-2.5 rounded-md text-sm transition-all duration-200",
+                    "hover:bg-muted/50 hover:text-foreground",
+                    "flex items-center gap-2 group",
+                    activeId === item.id && "bg-primary/10 text-primary border-l-2 ml-2"
+                  )}
+                  style={{ paddingLeft: `${(item.level - 1) * 12 + 10}px` }}
+                >
+                  <ChevronRight
                     className={cn(
-                      "w-full text-left p-2.5 rounded-md text-sm transition-all duration-200",
-                      "hover:bg-muted/50 hover:text-foreground",
-                      "flex items-center gap-2 group",
-                      activeId === item.id && "bg-primary/10 text-primary border-l-2 border-primary ml-2"
+                      "h-3 w-3 text-muted-foreground transition-transform",
+                      "group-hover:text-foreground group-hover:translate-x-0.5",
+                      activeId === item.id && "text-primary"
                     )}
-                    style={{
-                      paddingLeft: `${(item.level - 1) * 12 + 10}px`
-                    }}
-                  >
-                    <ChevronRight 
-                      className={cn(
-                        "h-3 w-3 text-muted-foreground transition-transform",
-                        "group-hover:text-foreground group-hover:translate-x-0.5",
-                        activeId === item.id && "text-primary"
-                      )} 
-                    />
-                    <span className={cn(
+                  />
+                  <span
+                    className={cn(
                       "truncate flex-1",
                       item.level === 1 && "font-semibold",
                       item.level === 2 && "font-medium",
                       item.level >= 3 && "text-muted-foreground font-normal"
-                    )}>
-                      {item.title}
-                    </span>
-                  </button>
-                ))}
-              </div>
+                    )}
+                  >
+                    {item.title}
+                  </span>
+                </button>
+              ))}
             </div>
-          </div>
 
-          {/* 底部提示 */}
-          <div className="p-3 border-t border-border/50 bg-muted/20 shrink-0">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>点击标题快速跳转</span>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-primary rounded-full"></div>
-                <span>{Math.round(scrollProgress)}%</span>
+            <div className="px-3 pb-3 border-t">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>点击标题快速跳转</span>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <span>{Math.round(scrollProgress)}%</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* 顶部进度条 */}
-      <div className="fixed top-0 left-0 right-0 z-40 h-1 bg-muted/30">
-        <div 
-          className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-300"
-          style={{
-            width: `${Math.max(0, scrollProgress)}%`
-          }}
-        />
+        {/* 顶部进度条 */}
+        <div className="fixed top-0 left-0 right-0 z-20 h-1 bg-muted/30">
+          <div
+            className="h-full bg-gradient-to-r from-primary to-primary/80 transition-all duration-300"
+            style={{ width: `${Math.max(0, scrollProgress)}%` }}
+          />
+        </div>
       </div>
-    </div>
 
     {/* 移动端抽屉目录 */}
     <div className="md:hidden">
